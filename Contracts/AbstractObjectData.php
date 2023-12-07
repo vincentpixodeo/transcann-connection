@@ -6,8 +6,6 @@
 
 namespace WMS\Contracts;
 
-use WMS\Contracts\ObjectDataInterface;
-
 class AbstractObjectData implements ObjectDataInterface
 {
 
@@ -38,17 +36,42 @@ class AbstractObjectData implements ObjectDataInterface
         return $this->_data[$key] ?? null;
     }
 
+
+    public function toArray(): array
+    {
+        $arrayData = [];
+
+        foreach ($this->_data as $key => $item) {
+
+            $arrayData[$key] = $item instanceof ObjectDataInterface ? $item->toArray() : $item;
+
+        }
+
+        return $arrayData;
+    }
+
+    /**
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     * @throws \Exception
+     */
     public function __call(string $name, array $arguments)
     {
-        if (preg_match('/^get/', $name)) {
+        if (str_starts_with($name, 'get')) {
             $field = preg_replace('/^get/', '', $name);
             return $this->getData($field);
         }
         throw new \Exception("Call to undefined method ". static::class ."::{$name}()");
     }
 
+    /**
+     * @param string $name
+     * @return mixed
+     */
     public function __get(string $name)
     {
         return $this->getData($name);
     }
+
 }

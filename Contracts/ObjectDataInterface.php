@@ -29,4 +29,10 @@ interface ObjectDataInterface
      * @return mixed
      */
     public function getData(string $key = null, $default = null): mixed;
+
+    /**
+     * to Array
+     * @return array
+     */
+    public function toArray(): array;
 }
