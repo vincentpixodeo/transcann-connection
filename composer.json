@@ -1,0 +1,20 @@
+{
+  "name": "transcannconnection/WMS",
+  "description": "WMSXtent connection",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Vincent",
+      "email": "vincent@pixodeo.net"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "WMS\\": "/"
+    }
+  },
+  "require": {
+    "ext-curl": "*"
+  }
+}
