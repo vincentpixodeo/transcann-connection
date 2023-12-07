@@ -6,11 +6,11 @@
 
 namespace WMS\Apis\Login;
 
-use WMS\Contracts\RequestAction as RequestActionAlias;
+use WMS\Contracts\AbstractRequestAction;
 use WMS\Contracts\RequestActionInterface;
 use WMS\Http\Curl;
 
-class ReleaseToken extends RequestActionAlias implements RequestActionInterface
+class ReleaseToken extends AbstractRequestAction implements RequestActionInterface
 {
     protected Curl $_client;
 

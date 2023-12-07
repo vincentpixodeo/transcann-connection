@@ -6,13 +6,13 @@
 
 namespace WMS\Apis\Login;
 
-use WMS\Contracts\RequestAction;
+use WMS\Contracts\AbstractRequestAction;
 use WMS\Contracts\RequestActionInterface;
 use WMS\Http\Curl;
 use WMS\Http\Response;
 use WMS\WmsXtentService;
 
-class GetToken extends RequestAction implements RequestActionInterface
+class GetToken extends AbstractRequestAction implements RequestActionInterface
 {
     protected Curl $_client;
 

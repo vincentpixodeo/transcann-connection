@@ -8,11 +8,11 @@
 namespace WMS\Http;
 
 use WMS\Contracts\HttpRequestInterface;
-use WMS\Contracts\RequestAction;
+use WMS\Contracts\AbstractRequestAction;
 use WMS\WMSAuthentication;
 use WMS\WmsXtentService;
 
-class HttpAuthRequest extends RequestAction implements HttpRequestInterface
+class HttpAuthRequest extends AbstractRequestAction implements HttpRequestInterface
 {
     public WMSAuthentication $authentication;
 

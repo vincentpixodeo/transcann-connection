@@ -9,7 +9,7 @@ namespace WMS\Contracts;
 use Exception;
 use WMS\Http\Response;
 
-abstract class RequestAction implements RequestActionInterface
+abstract class AbstractRequestAction implements RequestActionInterface
 {
     protected ?string $uri = null;
 
