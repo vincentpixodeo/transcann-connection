@@ -63,6 +63,12 @@ abstract class RequestAction implements RequestActionInterface
                 array_merge($this->_data, $data),
                 array_merge($this->_headers, $headers)
             );
+            if ($this->getResponse()->getCode() > 300 && $data = $this->_response->getData()) {
+                if (is_array($data) && isset($data['Message'])) {
+                    throw new Exception($data['Message'], $this->getResponse()->getCode());
+                }
+                
+            }
             return true;
         }
         return false;
