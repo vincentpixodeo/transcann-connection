@@ -7,7 +7,7 @@
 namespace WMS\Data;
 
 use WMS\Contracts\AbstractObjectData;
-use WMS\Data\Reception\ReceptionDetail;
+
 
 /**
  * @property string _MetaId_
@@ -91,7 +91,7 @@ use WMS\Data\Reception\ReceptionDetail;
  * @property int MovementType
  * @property int StatusReceptionWithJS
  * @property Movement StorageMovement
- * @property ReceptionDetail[] ReceptionDetailsList
+ * @property Reception\ReceptionDetail[] ReceptionDetailsList
  */
 class Reception extends AbstractObjectData
 {

@@ -7,9 +7,6 @@
 namespace WMS\Data;
 
 use WMS\Contracts\AbstractObjectData;
-use WMS\Data\Address\City;
-use WMS\Data\Address\Office;
-use WMS\Data\Reception\ReceptionStatus as ReceptionStatus;
 
 
 /**
@@ -18,11 +15,11 @@ use WMS\Data\Reception\ReceptionStatus as ReceptionStatus;
  * @property boolean BlockedAccount
  * @property boolean CustomsManagement
  * @property boolean RemaindersManagementinReception
- * @property ReceptionStatus ReceptionStatus
+ * @property Reception\ReceptionStatus ReceptionStatus
  * @property int Id
  * @property string Name
- * @property Office Office
- * @property City OperationCity
+ * @property Address\Office Office
+ * @property Address\City OperationCity
  * @property string OperationCityName
  * @property string ShortName
  */

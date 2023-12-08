@@ -6,6 +6,8 @@
 
 namespace WMS\Contracts;
 
+use WMS\Helpers\Attribute;
+
 class AbstractObjectData implements ObjectDataInterface
 {
     /**
@@ -42,7 +44,7 @@ class AbstractObjectData implements ObjectDataInterface
 
                 if (! in_array($instance, Attribute::SYSTEM_INSTANCES) && !class_exists($instance)) {
                     $message = "Please add full path of property ".static::class."::{$property}. Autoload property for ".static::class." at file {$reflector->getFileName()}";
-                    if (!class_exists($reflector->getNamespaceName()."\\".$instance) && !class_exists("WMS\\Data\\".$instance)) {
+                    if (!class_exists($instance = $reflector->getNamespaceName()."\\".$instance) && !class_exists($instance = "WMS\\Data\\".$instance)) {
                         throw new \Exception($message);
                     }
                 }

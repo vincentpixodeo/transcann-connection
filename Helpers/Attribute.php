@@ -4,7 +4,9 @@
  * Email: vincent@pixodeo.net
  */
 
-namespace WMS\Contracts;
+namespace WMS\Helpers;
+
+use WMS\Data\Collection;
 
 final class Attribute
 {

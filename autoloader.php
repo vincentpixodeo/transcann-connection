@@ -16,13 +16,18 @@ spl_autoload_register(function ($class_name) {
 if (!function_exists('dump')) {
     function dump(): void
     {
-        var_dump(...func_get_args());
+        foreach(func_get_args() as $item) {
+            print_r($item);
+        }
     }
 }
 if (!function_exists('dd')) {
     function dd(): void
     {
-        var_dump(...func_get_args());
+        foreach(func_get_args() as $item) {
+            print_r($item);
+        }
+
         die();
     }
 }

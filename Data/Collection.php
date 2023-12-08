@@ -4,8 +4,10 @@
  * Email: vincent@pixodeo.net
  */
 
-namespace WMS\Contracts;
+namespace WMS\Data;
 
+
+use WMS\Contracts\ObjectDataInterface;
 
 class Collection implements ObjectDataInterface, \ArrayAccess
 {

@@ -11,9 +11,12 @@ use WMS\Contracts\RequestActionInterface;
 require_once('autoloader.php');
 class WmsXtentService
 {
-    static protected $_instance;
+    const ROOT_DIR = __DIR__;
+
+    static protected ?WmsXtentService $_instance = null;
     protected array $configs;
-    protected $authentication;
+    protected ?WMSAuthentication $authentication = null;
+
     public function __construct()
     {
         $this->configs = include __DIR__.'/config.php';
@@ -25,11 +28,34 @@ class WmsXtentService
      * @param $default
      * @return array|mixed|null
      */
-    function getConfig($key = null, $default = null)
+    function getConfig($key = null, $default = null): mixed
     {
         if (is_null($key))
             return $this->configs;
         return $this->configs[$key] ?? $default;
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     */
+    function storagePath(string $path = ''): string
+    {
+        $path = trim($this->getConfig('storage', 'storage'), '\\/').'/'.trim($path ?? '', '\\/');
+
+        $path = preg_replace('/\\\/', '/', $path);
+
+        $trees = explode('/', $path);
+
+        $path = self::ROOT_DIR;
+
+        foreach ($trees as $tree) {
+            $path .= "/{$tree}";
+            if (!file_exists($path)) {
+                mkdir($path);
+            }
+        }
+        return $path;
     }
 
     /**

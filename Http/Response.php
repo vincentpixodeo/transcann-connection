@@ -19,7 +19,10 @@ class Response
     {
         $response = utf8_decode($response);
         $response = ltrim($response, "?");
+        $response = mb_convert_encoding($response, 'ISO-8859-1', 'UTF-8');
+
         $this->_response = $response;
+
         $this->_code = $code;
 
         $this->_processData();
