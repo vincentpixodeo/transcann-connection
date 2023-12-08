@@ -15,7 +15,7 @@ class Response
     /**
      * @throws Exception
      */
-    public function __construct(string $response, int $code)
+    public function __construct(string $response, int $code, bool $jsonException = true)
     {
         $response = utf8_decode($response);
         $response = ltrim($response, "?");
@@ -25,19 +25,22 @@ class Response
 
         $this->_code = $code;
 
-        $this->_processData();
+        $this->_processData($jsonException);
     }
 
     /**
      * @return mixed
      * @throws Exception
      */
-    protected function _processData(): mixed
+    protected function _processData(bool $jsonException = true): mixed
     {
         if (is_null($this->_data)) {
             $return = json_decode($this->_response, true);
 
-            if (json_last_error()) {
+            if (json_last_error() && $jsonException) {
+                throw new JsonException('json_decode: '. json_last_error_msg());
+            }
+            if (json_last_error() && !$jsonException) {
                 $this->_data = $this->_response;
             } else {
                 $this->_data = $return;

@@ -61,7 +61,7 @@ class Curl
     public function __construct(
         string $baseUrl,
         bool   $followLocation = true,
-        int    $timeOut = 30,
+        int    $timeOut = 0,
         int    $maxRedirects = 4
         )
 
@@ -252,6 +252,7 @@ class Curl
             $this->currentLog->setResponse($this->_response, $this->_status);
             $this->logs[] = $this->currentLog;
         }
+
 
         if (curl_errno($this->_curl)) {
             $this->_error = curl_error($this->_curl);

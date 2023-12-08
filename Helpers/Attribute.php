@@ -29,7 +29,9 @@ final class Attribute
         if (in_array($this->instance, self::SYSTEM_INSTANCES)) {
             return $this->_convertSystemData($data);
         }
-
+        if (empty($data)) {
+            return $data;
+        }
         if ($this->isArray) {
             $data =  array_map(function($item){
                 return new $this->instance($item);

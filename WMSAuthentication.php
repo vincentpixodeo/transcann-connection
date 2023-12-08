@@ -81,10 +81,8 @@ class WMSAuthentication
             ]
         ]);
         if ($action->execute() && $action->getResponse()->getCode() == 200) {
-            $token = utf8_decode($action->getResponse()->getData());
-            $token = preg_replace('/\?*\"/m', '', $token);
-
-            $this->setAuthenticationData($token);
+            
+            $this->setAuthenticationData($action->getResponse()->getData());
             return true;
         }
         return false;

@@ -37,6 +37,9 @@ abstract class AbstractRequestAction implements RequestActionInterface
     }
     public function getResponse(): ?Response
     {
+        if (is_null($this->_response) && $log = $this->getClient()->getCurrentLog()) {
+            $this->_response = new Response($log->getResponse(), $log->getResponseCode(), false);
+        }
         return $this->_response;
     }
 
@@ -77,8 +80,7 @@ abstract class AbstractRequestAction implements RequestActionInterface
     public function execute(...$arguments): bool
     {
         try {
-            $this->requestApi(...$arguments);
-            return true;
+            return $this->requestApi(...$arguments);
         } catch (Exception $exception) {
             $this->_errors[] = $exception;
             return false;
