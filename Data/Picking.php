@@ -7,7 +7,7 @@
 namespace WMS\Data;
 
 use WMS\Contracts\AbstractObjectData;
-use WMS\Data\Address\Location;
+
 
 /**
  * @property string _MetaId_
@@ -20,7 +20,7 @@ use WMS\Data\Address\Location;
  * @property int MaxPickQty
  * @property int MinPickQty
  * @property string PreparationType
- * @property Location Location
+ * @property \WMS\Data\Address\Location[] Location
  */
 class Picking extends AbstractObjectData
 {

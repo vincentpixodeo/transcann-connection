@@ -17,6 +17,8 @@ class Response
      */
     public function __construct(string $response, int $code)
     {
+        $response = utf8_decode($response);
+        $response = ltrim($response, "?");
         $this->_response = $response;
         $this->_code = $code;
 

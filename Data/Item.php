@@ -7,7 +7,7 @@
 namespace WMS\Data;
 
 use WMS\Contracts\AbstractObjectData;
-use WMS\Data\Address\Family;
+
 
 /**
  * @property string _MetaId_
@@ -170,7 +170,7 @@ use WMS\Data\Address\Family;
  * @property Picking[] PickingList
  * @property Client Client
  * @property Currency Currency
- * @property Family Family
+ * @property \WMS\Data\Address\Family Family
  * @property Unit Unit
  * @property Gencod[] GencodList
  */

@@ -7,7 +7,9 @@ spl_autoload_register(function ($class_name) {
 
         $class_name = preg_replace('/^WMS\\//', '/', $class_name);
 
-        require_once(__DIR__ . $class_name . '.php');
+        if (file_exists(__DIR__ . $class_name . '.php')) {
+            require_once(__DIR__ . $class_name . '.php');
+        }
     }
 });
 

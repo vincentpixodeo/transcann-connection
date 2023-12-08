@@ -8,23 +8,69 @@ namespace WMS\Contracts;
 
 class AbstractObjectData implements ObjectDataInterface
 {
+    /**
+     * @var Attribute[]
+     */
+    protected static array $casts = [];
 
     protected array $_data;
 
+    /**
+     * @throws \Exception
+     */
     public function __construct(array $data = [])
     {
-        $this->_data = $data;
+        $this->_initCasts();
+        $this->setData($data);
+
+    }
+
+    private function _initCasts(): void
+    {
+        if (isset(static::$casts[static::class]))
+            return;
+
+        $reflector = new \ReflectionClass(static::class);
+
+        $docs = $reflector->getDocComment();
+        $pattern = "#@property\s*(([\w\\\]+)(\[])*)\s+([\w_]+)\s+([\w\s]*)#";
+        static::$casts[static::class] = [];
+        if ($docs) {
+            preg_match_all($pattern, $docs, $matches, PREG_SET_ORDER);
+            foreach ($matches  as $attribute) {
+                list($full, $propertyInstance, $instance, $isArray, $property, $description) = $attribute;
+
+                if (! in_array($instance, Attribute::SYSTEM_INSTANCES) && !class_exists($instance)) {
+                    $message = "Please add full path of property ".static::class."::{$property}. Autoload property for ".static::class." at file {$reflector->getFileName()}";
+                    if (!class_exists($reflector->getNamespaceName()."\\".$instance) && !class_exists("WMS\\Data\\".$instance)) {
+                        throw new \Exception($message);
+                    }
+                }
+                static::$casts[static::class][$property] = new Attribute($property, $instance, !empty($isArray), $description);
+            }
+        }
+    }
+    private function _convertData(array $data): array
+    {
+        array_walk($data, function (&$val, $key) {
+            /** @var Attribute $attribute */
+            if ($attribute = (static::$casts[static::class][$key] ?? null)) {
+                $val = $attribute->convertData($val);
+            }
+        });
+
+        return $data;
     }
 
     public function setData(array $data): static
     {
-        $this->_data = $data;
+        $this->_data = $this->_convertData($data);
         return $this;
     }
 
     public function addData(array $data): static
     {
-        $this->_data = $data;
+        $this->_data = array_merge($this->_data, $this->_convertData($data));
         return $this;
     }
 
@@ -39,15 +85,9 @@ class AbstractObjectData implements ObjectDataInterface
 
     public function toArray(): array
     {
-        $arrayData = [];
-
-        foreach ($this->_data as $key => $item) {
-
-            $arrayData[$key] = $item instanceof ObjectDataInterface ? $item->toArray() : $item;
-
-        }
-
-        return $arrayData;
+        return array_map(function ($value) {
+            return $value instanceof ObjectDataInterface ? $value->toArray() : $value;
+        }, $this->_data);
     }
 
     /**

@@ -7,6 +7,8 @@
 namespace WMS\Data\Reception;
 
 use WMS\Contracts\AbstractObjectData;
+use WMS\Data\Client;
+
 
 /**
  * @property string _MetaId_
@@ -55,6 +57,7 @@ use WMS\Contracts\AbstractObjectData;
  * @property string Unit
  * @property string UnitCode
  * @property string Value
+ * @property Client Client
  */
 class ItemReceived extends AbstractObjectData
 {
