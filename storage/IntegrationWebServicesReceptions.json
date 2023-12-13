@@ -1,0 +1,69 @@
+{
+  "url": "https:\/\/transcan.dyndns.info:6444\/WMSXtent\/json\/IntegrationWebServices\/Receptions",
+  "body": {
+    "listReceptions": [
+      {
+        "Order": "TEST11111111",
+        "SupplierReference": "CRG SOSKIN",
+        "ClientCodeId": "321",
+        "MovementCodeId": "ENT",
+        "AppointmentDate": null,
+        "ArrivalDate": null,
+        "DateOfPlannedReceiving": "202312141415",
+        "Comments": "INTEGRE PAR API",
+        "EdiReceptionDetailsList": [
+          {
+            "BatchNumber": null,
+            "Comments": null,
+            "CRD": null,
+            "CurrencyId": null,
+            "CustomizedDate1": null,
+            "CustomizedDate2": null,
+            "CustomizedDate3": null,
+            "CustomizedDate4": null,
+            "CustomizedDate5": null,
+            "CustomizedField1": null,
+            "CustomizedField10": null,
+            "CustomizedField2": null,
+            "CustomizedField3": null,
+            "CustomizedField4": null,
+            "CustomizedField5": null,
+            "CustomizedField6": null,
+            "CustomizedField7": null,
+            "CustomizedField8": null,
+            "CustomizedField9": null,
+            "DAEDSANumber": null,
+            "DAEDSAType": null,
+            "ExpectedFullPallet": null,
+            "ExpectedParcel": "1",
+            "ExpectedSaleUnit": null,
+            "ExpiryDate": null,
+            "ExternalItemId": null,
+            "ExternalLineNumber": null,
+            "GrossWeight": null,
+            "Id": 0,
+            "Inner": null,
+            "InternalItemId": "CRG01SOS30120",
+            "ItemCode": "CRG01SOS30120",
+            "LayersPerPallet": null,
+            "LineNumber": "010",
+            "MultiReferencePalletId": null,
+            "NetWeight": null,
+            "Outer": null,
+            "PackagingCode": null,
+            "Pallet": "PAL0123456789",
+            "PalletOccupationDepth": null,
+            "PalletOccupationHeight": null,
+            "PalletOccupationWidth": null,
+            "ParcelsPerLayer": null,
+            "StatusCodeId": null,
+            "Value": null
+          }
+        ]
+      }
+    ],
+    "token": "10765514160001702451639383"
+  },
+  "responseCode": 200,
+  "response": "<Fault xmlns=\"http:\/\/schemas.microsoft.com\/ws\/2005\/05\/envelope\/none\"><Code><Value>Receiver<\/Value><Subcode><Value xmlns:a=\"http:\/\/schemas.microsoft.com\/net\/2005\/12\/windowscommunicationfoundation\/dispatcher\">a:InternalServiceFault<\/Value><\/Subcode><\/Code><Reason><Text xml:lang=\"fr-FR\">Pas de param\u00e9trage EDI pour le stockeur 321.<\/Text><\/Reason><Detail><ExceptionDetail xmlns=\"http:\/\/schemas.datacontract.org\/2004\/07\/System.ServiceModel\" xmlns:i=\"http:\/\/www.w3.org\/2001\/XMLSchema-instance\"><HelpLink i:nil=\"true\"\/><InnerException i:nil=\"true\"\/><Message>Pas de param\u00e9trage EDI pour le stockeur 321.<\/Message><StackTrace>   \u00e0 AWMS.Services.IntegrationWebServicesMethods.Receptions(String token, List`1 listReceptions) dans C:\\projects\\AWMS\\AWMS.Services\\WebServices\\IntegrationWebServicesMethods.cs:ligne 68&#xD;\n   \u00e0 SyncInvokeReceptions(Object , Object[] , Object[] )&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.SyncMethodInvoker.Invoke(Object instance, Object[] inputs, Object[]&amp; outputs)&#xD;\n   \u00e0 SageATL.SageATLWCFInvoker.Invoke(Object instance, Object[] inputs, Object[]&amp; outputs)&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.DispatchOperationRuntime.InvokeBegin(MessageRpc&amp; rpc)&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.ImmutableDispatchRuntime.ProcessMessage5(MessageRpc&amp; rpc)&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.ImmutableDispatchRuntime.ProcessMessage11(MessageRpc&amp; rpc)&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.MessageRpc.Process(Boolean isOperationContextSet)<\/StackTrace><Type>System.Exception<\/Type><\/ExceptionDetail><\/Detail><\/Fault>"
+}
