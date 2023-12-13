@@ -10,10 +10,15 @@ class Response
 {
     protected string $_response;
     protected int $_code;
-    protected $_data;
+    protected mixed $_data;
+
+    private bool $_processed = false;
 
     /**
-     * @throws Exception
+     * @param string $response
+     * @param int $code
+     * @param bool $jsonException
+     * @throws JsonException
      */
     public function __construct(string $response, int $code, bool $jsonException = true)
     {
@@ -29,21 +34,17 @@ class Response
     }
 
     /**
+     * @param bool $jsonException
      * @return mixed
-     * @throws Exception
+     * @throws JsonException
      */
     protected function _processData(bool $jsonException = true): mixed
     {
-        if (is_null($this->_data)) {
-            $return = json_decode($this->_response, true);
+        if (!$this->_processed) {
+            $this->_data = json_decode($this->_response, true);
 
             if (json_last_error() && $jsonException) {
                 throw new JsonException('json_decode: '. json_last_error_msg());
-            }
-            if (json_last_error() && !$jsonException) {
-                $this->_data = $this->_response;
-            } else {
-                $this->_data = $return;
             }
         }
 
@@ -57,9 +58,20 @@ class Response
     {
         return $this->_code;
     }
+
+    /**
+     * @return mixed
+     */
     function getData(): mixed
     {
         return $this->_data;
     }
 
+    /**
+     * @return string
+     */
+    public function getResponse(): string
+    {
+        return $this->_response;
+    }
 }

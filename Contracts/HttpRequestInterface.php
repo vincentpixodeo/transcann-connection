@@ -10,5 +10,5 @@ use WMS\Http\Curl;
 
 interface HttpRequestInterface
 {
-    public function getClient(): Curl;
+    public function getClient(): ClientInterface;
 }

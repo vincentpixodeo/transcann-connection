@@ -7,10 +7,14 @@
 namespace WMS\Contracts;
 
 use Exception;
+use WMS\Http\JsonException;
 use WMS\Http\Response;
+use WMS\WmsXtentService;
 
 abstract class AbstractRequestAction implements RequestActionInterface
 {
+    protected ClientInterface $_client;
+
     protected ?string $uri = null;
 
     protected string $_method = 'POST';
@@ -22,6 +26,17 @@ abstract class AbstractRequestAction implements RequestActionInterface
     protected array $_errors = [];
 
     protected ?Response $_response = null;
+
+    public function __construct(ClientInterface $client = null)
+    {
+        is_null($client) && $this->_client = WmsXtentService::instance()->getClient();
+    }
+
+    public function getClient(): ClientInterface
+    {
+        return $this->_client;
+    }
+
     public function validate(): bool
     {
         if (!in_array($this->_method, [
@@ -35,10 +50,12 @@ abstract class AbstractRequestAction implements RequestActionInterface
 
         return empty($this->_errors);
     }
+
+
     public function getResponse(): ?Response
     {
         if (is_null($this->_response) && $log = $this->getClient()->getCurrentLog()) {
-            $this->_response = new Response($log->getResponse(), $log->getResponseCode(), false);
+            $this->_response = $this->getClient()->getResponse();
         }
         return $this->_response;
     }
@@ -66,11 +83,10 @@ abstract class AbstractRequestAction implements RequestActionInterface
                 array_merge($this->_data, $data),
                 array_merge($this->_headers, $headers)
             );
-            if ($this->getResponse()->getCode() > 300 && $data = $this->_response->getData()) {
+            if ($this->getResponse() || $this->getResponse()->getCode() > 300 && $data = $this->getResponse()->getData()) {
                 if (is_array($data) && isset($data['Message'])) {
                     throw new Exception($data['Message'], $this->getResponse()->getCode());
                 }
-                
             }
             return true;
         }

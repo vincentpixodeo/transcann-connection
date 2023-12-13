@@ -7,6 +7,7 @@
 
 namespace WMS\Http;
 
+use WMS\Contracts\ClientInterface;
 use WMS\Contracts\HttpRequestInterface;
 use WMS\Contracts\AbstractRequestAction;
 use WMS\WMSAuthentication;
@@ -16,24 +17,17 @@ class HttpAuthRequest extends AbstractRequestAction implements HttpRequestInterf
 {
     public WMSAuthentication $authentication;
 
-    protected $_client;
-    protected array $_data = [];
-    protected array $_headers = [];
-
-    public function __construct()
+    public function __construct(ClientInterface $client = null)
     {
         $this->authentication = WmsXtentService::instance()->getAuthentication();
+        parent::__construct($client ?? $this->authentication->getClient());
     }
 
     /**
      * @throws \Exception
      */
-    public function getClient(): Curl
+    public function getClient(): ClientInterface
     {
-        if ($this->_client)
-            return $this->_client;
-
-        $this->_client = $this->authentication->getClient();
         $token = $this->authentication->getToken();
         if (empty($token)) {
             throw new \Exception('The token is empty');

@@ -32,9 +32,9 @@ interface RequestActionInterface
 
     /**
      * get Client Request
-     * @return Curl
+     * @return ClientInterface
      */
-    public function getClient(): Curl;
+    public function getClient(): ClientInterface;
 
     /**
      * do Action

@@ -8,9 +8,8 @@ namespace WMS;
 
 use WMS\Apis\Login\GetToken;
 use WMS\Apis\Login\ReleaseToken;
+use WMS\Contracts\ClientInterface;
 use WMS\Http\Curl;
-use WMS\Http\Exception;
-use WMS\Http\HttpRequest;
 use WMS\Http\Log;
 
 class WMSAuthentication
@@ -31,8 +30,7 @@ class WMSAuthentication
         protected string $password
     )
     {
-        $baseUrl = WmsXtentService::instance()->getConfig('baseUrl');
-        $this->_client = new Curl($baseUrl);
+        $this->_client = WmsXtentService::instance()->getClient();
     }
 
 
@@ -165,7 +163,7 @@ class WMSAuthentication
 
     }
 
-    function getClient(): ?Curl
+    function getClient(): ?ClientInterface
     {
         return $this->_client;
     }

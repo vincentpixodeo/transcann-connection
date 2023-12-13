@@ -6,9 +6,20 @@
 
 namespace WMS;
 
+use WMS\Contracts\ClientInterface;
 use WMS\Contracts\RequestActionInterface;
+use WMS\Http\Curl;
+use WMS\Http\Exception;
 
 require_once('autoloader.php');
+
+/**
+ * @method static ClientInterface client()
+ * @method static array|mixed|null config(string|null $key = null, $default = null)
+ * @method static WMSAuthentication authentication()
+ * @method static object action(string $className, array $params = [])
+ */
+
 class WmsXtentService
 {
     const ROOT_DIR = __DIR__;
@@ -24,15 +35,20 @@ class WmsXtentService
     }
 
     /**
-     * @param $key
-     * @param $default
+     * @param string|null $key
+     * @param null $default
      * @return array|mixed|null
      */
-    function getConfig($key = null, $default = null): mixed
+    function getConfig(string $key = null, $default = null): mixed
     {
         if (is_null($key))
             return $this->configs;
         return $this->configs[$key] ?? $default;
+    }
+
+    function getClient(): ClientInterface
+    {
+        return new Curl($this->getConfig('baseUrl'));
     }
 
     /**
@@ -76,7 +92,7 @@ class WmsXtentService
      * @return object
      * @throws \Exception
      */
-    public function getAction(string $className, array $params = []): object
+    public static function getAction(string $className, array $params = []): object
     {
         $action = new $className(...$params);
 
@@ -97,4 +113,17 @@ class WmsXtentService
         }
         return static::$_instance;
     }
+
+    /**
+     * @throws Exception
+     */
+    public static function __callStatic(string $name, array $arguments)
+    {
+        $method = 'get'.ucfirst($name);
+        if (method_exists(static::class, $method)) {
+            return static::instance()->{$method}(...$arguments);
+        }
+        throw new Exception("Call to undefined method " . static::class . "::{$name}()");
+    }
+
 }
