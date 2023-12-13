@@ -81,7 +81,7 @@ class AbstractObjectData implements ObjectDataInterface
         if (is_null($key)) {
             return $this->_data;
         }
-        return $this->_data[$key] ?? null;
+        return $this->_data[$key] ?? $default;
     }
 
 
