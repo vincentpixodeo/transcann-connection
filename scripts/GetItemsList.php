@@ -2,8 +2,8 @@
 include_once __DIR__.'/../autoloader.php';
 
 $instance = \WMS\WmsXtentService::instance();
-
-$path = $instance->storagePath('logs/GetItemsList');
+$clientId = 2000;
+$path = $instance->storagePath('logs/GetItemsList/'. $clientId);
 
 $action = $instance->getAction(\WMS\Apis\QueryWebServices\GetItems::class);
 
@@ -14,7 +14,7 @@ $action = $instance->getAction(\WMS\Apis\QueryWebServices\GetItems::class);
 // dd(new \WMS\Data\Item($data));
 
 if ($action->execute([
-	'filters' => 'Client.Id = 321 || Client.Id = 1 || Client.Id = 2000'
+	'filters' => 'Client.Id = '.$clientId
 ])) {
 	$logger = new \WMS\Helpers\Logs\LogFile($path, true);
 
