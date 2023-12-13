@@ -20,7 +20,7 @@ class HttpAuthRequest extends AbstractRequestAction implements HttpRequestInterf
     public function __construct(ClientInterface $client = null)
     {
         $this->authentication = WmsXtentService::instance()->getAuthentication();
-        parent::__construct($client ?? $this->authentication->getClient());
+        parent::__construct($this->authentication->getClient());
     }
 
     /**
@@ -29,6 +29,7 @@ class HttpAuthRequest extends AbstractRequestAction implements HttpRequestInterf
     public function getClient(): ClientInterface
     {
         $token = $this->authentication->getToken();
+
         if (empty($token)) {
             throw new \Exception('The token is empty');
         }

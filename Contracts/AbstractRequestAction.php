@@ -13,7 +13,7 @@ use WMS\WmsXtentService;
 
 abstract class AbstractRequestAction implements RequestActionInterface
 {
-    protected ClientInterface $_client;
+    protected ?ClientInterface $_client = null;
 
     protected ?string $uri = null;
 
@@ -29,7 +29,9 @@ abstract class AbstractRequestAction implements RequestActionInterface
 
     public function __construct(ClientInterface $client = null)
     {
-        is_null($client) && $this->_client = WmsXtentService::instance()->getClient();
+
+        is_null($client) && $client = WmsXtentService::instance()->getClient();
+        $this->_client = $client;
     }
 
     public function getClient(): ClientInterface

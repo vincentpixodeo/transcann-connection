@@ -15,4 +15,5 @@ use WMS\WmsXtentService;
 
 class GetToken extends AbstractRequestAction implements RequestActionInterface
 {
+	protected string $_method = RequestActionInterface::METHOD_GET;
 }

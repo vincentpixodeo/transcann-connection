@@ -70,15 +70,12 @@ class WMSAuthentication
     {
         $this->releaseToken();
 
-        $action = WmsXtentService::instance()->getAction(GetToken::class, [
-            $this->_client,
-            [
+        $action = WmsXtentService::instance()->getAction(GetToken::class, [$this->_client]);
+        if ($action->execute([
                 'accessId' => $this->accessId,
                 'userId' => $this->user,
                 'password' => $this->password
-            ]
-        ]);
-        if ($action->execute() && $action->getResponse()->getCode() == 200) {
+            ]) && $action->getResponse()->getCode() == 200) {
             
             $this->setAuthenticationData($action->getResponse()->getData());
             return true;
@@ -96,12 +93,9 @@ class WMSAuthentication
             file_put_contents(self::AUTH_FILE, '');
 
             if ($this->_authenticationData) {
-                WmsXtentService::instance()->getAction(ReleaseToken::class, [
-                    $this->_client,
-                    [
+                WmsXtentService::instance()->getAction(ReleaseToken::class, [$this->_client])->execute([
                         'token' => $this->_authenticationData['token'],
-                    ]
-                ])->execute();
+                    ]);
             }
         } catch (\Exception $exception) {}
 
