@@ -1,10 +1,10 @@
 <?php
 include_once __DIR__.'/../autoloader.php';
 
-$instance = \WMS\WmsXtentService::instance();
+$instance = \WMS\Xtent\WmsXtentService::instance();
 
 
-$action = $instance->getAction(\WMS\Apis\IntegrationWebServices\Items::class);
+$action = $instance->getAction(\WMS\Xtent\Apis\IntegrationWebServices\Items::class);
 
 
 $data = [
@@ -56,7 +56,7 @@ $data = [
 
 if ($action->execute($data)) {
 	dd($action->getResponse()->getData());
-	$logger = new \WMS\Helpers\Logs\LogFile($instance->storagePath('logs/IntegrationWebServices/Receptions'), true);
+	$logger = new \WMS\Xtent\Helpers\Logs\LogFile($instance->storagePath('logs/IntegrationWebServices/Receptions'), true);
 
 	$logger->write($action->getResponse()->getData()['result'], 'reception');
 } else {
@@ -69,6 +69,6 @@ if ($action->execute($data)) {
 		'response' => $log->getResponse()
 	];
 	
-	$logger = new \WMS\Helpers\Logs\LogFile($instance->storagePath('logs/IntegrationWebServices/Items'));
+	$logger = new \WMS\Xtent\Helpers\Logs\LogFile($instance->storagePath('logs/IntegrationWebServices/Items'));
 	$logger->write($dataLog, 'errors'.date_create()->format('Y-m-d H-i-s'));
 }

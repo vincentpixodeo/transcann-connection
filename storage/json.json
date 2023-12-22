@@ -1,0 +1,50 @@
+{
+  "url": "https:\/\/transcan.dyndns.info:6444\/WMSXtent\/json\/IntegrationWebServices\/Items",
+  "body": {
+    "listItems": [
+      {
+        "ClientCodeId": 2000,
+        "ItemCode": "BP",
+        "Description": "LA BONNE PAYE",
+        "ExternalReference": null,
+        "BatchManagement": "L",
+        "RotationCode": "A",
+        "UnitCode": "BOI",
+        "Comments": null,
+        "Inner": 1,
+        "Outer": 8,
+        "ParcelsPerLayer": 40,
+        "LayersPerPallet": 6,
+        "SUWidth": 20,
+        "SUDepth": 40,
+        "SUHeight": 5,
+        "Width": 50,
+        "Depth": 60,
+        "Height": 30,
+        "PalletOccupationWidth": 100,
+        "PalletOccupationDepth": 100,
+        "PalletOccupationHeight": 120,
+        "ParcelGrossWeight": 2.6,
+        "ParcelNetWeight": 2.6,
+        "SUGrossWeight": 0.325,
+        "SUNetWeight": 0.325,
+        "CurrencyId": "EUR",
+        "Value": 12.123,
+        "PackagingCode": "EUR",
+        "InboundStatus": null,
+        "ReturnStatus": "IND",
+        "OutboundStatus": null,
+        "SupplierCodeId": 111,
+        "FamilyCode": "AAA",
+        "EdiItemGencode": [
+          {
+            "ItemGencod": "87110003603546546416"
+          }
+        ]
+      }
+    ],
+    "token": "10765514160001702452717345"
+  },
+  "responseCode": 200,
+  "response": "<Fault xmlns=\"http:\/\/schemas.microsoft.com\/ws\/2005\/05\/envelope\/none\"><Code><Value>Receiver<\/Value><Subcode><Value xmlns:a=\"http:\/\/schemas.microsoft.com\/net\/2005\/12\/windowscommunicationfoundation\/dispatcher\">a:InternalServiceFault<\/Value><\/Subcode><\/Code><Reason><Text xml:lang=\"fr-FR\">Pas de param\u00e9trage EDI pour le stockeur 2000.<\/Text><\/Reason><Detail><ExceptionDetail xmlns=\"http:\/\/schemas.datacontract.org\/2004\/07\/System.ServiceModel\" xmlns:i=\"http:\/\/www.w3.org\/2001\/XMLSchema-instance\"><HelpLink i:nil=\"true\"\/><InnerException i:nil=\"true\"\/><Message>Pas de param\u00e9trage EDI pour le stockeur 2000.<\/Message><StackTrace>   \u00e0 AWMS.Services.IntegrationWebServicesMethods.Items(String token, List`1 listItems) dans C:\\projects\\AWMS\\AWMS.Services\\WebServices\\IntegrationWebServicesMethods.cs:ligne 226&#xD;\n   \u00e0 SyncInvokeItems(Object , Object[] , Object[] )&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.SyncMethodInvoker.Invoke(Object instance, Object[] inputs, Object[]&amp; outputs)&#xD;\n   \u00e0 SageATL.SageATLWCFInvoker.Invoke(Object instance, Object[] inputs, Object[]&amp; outputs)&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.DispatchOperationRuntime.InvokeBegin(MessageRpc&amp; rpc)&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.ImmutableDispatchRuntime.ProcessMessage5(MessageRpc&amp; rpc)&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.ImmutableDispatchRuntime.ProcessMessage11(MessageRpc&amp; rpc)&#xD;\n   \u00e0 System.ServiceModel.Dispatcher.MessageRpc.Process(Boolean isOperationContextSet)<\/StackTrace><Type>System.Exception<\/Type><\/ExceptionDetail><\/Detail><\/Fault>"
+}

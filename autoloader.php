@@ -1,14 +1,16 @@
 <?php
 spl_autoload_register(function ($class_name) {
-    $preg_match = preg_match('/^WMS\\\/', $class_name);
+    $preg_match = preg_match('/^WMS\\\Xtent\\\/', $class_name);
 
     if (1 === $preg_match) {
         $class_name = preg_replace('/\\\/', '/', $class_name);
 
-        $class_name = preg_replace('/^WMS\\//', '/', $class_name);
+        $class_name = preg_replace('/^WMS\\/Xtent\\//', '/', $class_name);
 
-        if (file_exists(__DIR__ . $class_name . '.php')) {
-            require_once(__DIR__ . $class_name . '.php');
+        $path = __DIR__ .'/src/'. $class_name . '.php';
+
+        if (file_exists($path)) {
+            require_once($path);
         }
     }
 });
