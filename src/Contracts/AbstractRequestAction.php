@@ -64,7 +64,7 @@ abstract class AbstractRequestAction implements RequestActionInterface
     function getUri(): string
     {
         if (empty($this->uri)) {
-            $uri = preg_replace('/WMS\\\/', '',static::class);
+            $uri = preg_replace('/WMS\\\Xtent\\\/', '',static::class);
             $uri = preg_replace('/Apis\\\/', '',$uri);
             $uri = preg_replace('/\\\/', '/',$uri);
             $this->uri = $uri;
