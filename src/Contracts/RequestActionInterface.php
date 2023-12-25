@@ -23,10 +23,10 @@ interface RequestActionInterface
     public function getUri(): string;
 
     /**
-     * Validate action
+     * @param array $data
      * @return bool
      */
-    public function validate(): bool;
+    public function validate(array $data): bool;
 
     /**
      * get Client Request

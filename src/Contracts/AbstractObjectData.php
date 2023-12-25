@@ -39,12 +39,12 @@ class AbstractObjectData implements ObjectDataInterface
         static::$casts[static::class] = [];
         if ($docs) {
             preg_match_all($pattern, $docs, $matches, PREG_SET_ORDER);
-            foreach ($matches  as $attribute) {
+            foreach ($matches as $attribute) {
                 list($full, $propertyInstance, $instance, $isArray, $property, $description) = $attribute;
 
-                if (! in_array($instance, Attribute::SYSTEM_INSTANCES) && !class_exists($instance)) {
-                    $message = "Please add full path of property ".static::class."::{$property}. Autoload property for ".static::class." at file {$reflector->getFileName()}";
-                    if (!class_exists($instance = $reflector->getNamespaceName()."\\".$instance) && !class_exists($instance = "WMS\\Data\\".$instance)) {
+                if (!in_array($instance, Attribute::SYSTEM_INSTANCES) && !class_exists($instance)) {
+                    $message = "Please add full path of property " . static::class . "::{$property}. Autoload property for " . static::class . " at file {$reflector->getFileName()}";
+                    if (!class_exists($instance = $reflector->getNamespaceName() . "\\" . $instance) && !class_exists($instance = "WMS\\Data\\" . $instance)) {
                         throw new \Exception($message);
                     }
                 }
@@ -52,6 +52,11 @@ class AbstractObjectData implements ObjectDataInterface
             }
         }
     }
+
+    /**
+     * @param array $data
+     * @return array
+     */
     private function _convertData(array $data): array
     {
         array_walk($data, function (&$val, $key) {
@@ -64,18 +69,31 @@ class AbstractObjectData implements ObjectDataInterface
         return $data;
     }
 
+    /**
+     * @param array $data
+     * @return $this
+     */
     public function setData(array $data): static
     {
         $this->_data = $this->_convertData($data);
         return $this;
     }
 
+    /**
+     * @param array $data
+     * @return $this
+     */
     public function addData(array $data): static
     {
         $this->_data = array_merge($this->_data, $this->_convertData($data));
         return $this;
     }
 
+    /**
+     * @param string|null $key
+     * @param $default
+     * @return mixed
+     */
     public function getData(string $key = null, $default = null): mixed
     {
         if (is_null($key)) {
@@ -85,6 +103,9 @@ class AbstractObjectData implements ObjectDataInterface
     }
 
 
+    /**
+     * @return array
+     */
     public function toArray(): array
     {
         return array_map(function ($value) {
@@ -104,7 +125,7 @@ class AbstractObjectData implements ObjectDataInterface
             $field = preg_replace('/^get/', '', $name);
             return $this->getData($field);
         }
-        throw new \Exception("Call to undefined method ". static::class ."::{$name}()");
+        throw new \Exception("Call to undefined method " . static::class . "::{$name}()");
     }
 
     /**

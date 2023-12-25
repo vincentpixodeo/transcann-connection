@@ -1,4 +1,7 @@
 <?php
+
+const DOL_HTDOCS_DIR = __DIR__ . '/../../../';
+
 spl_autoload_register(function ($class_name) {
     $preg_match = preg_match('/^WMS\\\Xtent\\\/', $class_name);
 
@@ -7,7 +10,7 @@ spl_autoload_register(function ($class_name) {
 
         $class_name = preg_replace('/^WMS\\/Xtent\\//', '/', $class_name);
 
-        $path = __DIR__ .'/src/'. $class_name . '.php';
+        $path = __DIR__ . '/src/' . $class_name . '.php';
 
         if (file_exists($path)) {
             require_once($path);
@@ -15,10 +18,18 @@ spl_autoload_register(function ($class_name) {
     }
 });
 
+if (!function_exists('includeDolFile')) {
+    function includeDolFile(): void
+    {
+        foreach (func_get_args() as $file) {
+            include_once DOL_HTDOCS_DIR . trim($file, '/');
+        }
+    }
+}
 if (!function_exists('dump')) {
     function dump(): void
     {
-        foreach(func_get_args() as $item) {
+        foreach (func_get_args() as $item) {
             print_r($item);
         }
     }
@@ -26,7 +37,7 @@ if (!function_exists('dump')) {
 if (!function_exists('dd')) {
     function dd(): void
     {
-        foreach(func_get_args() as $item) {
+        foreach (func_get_args() as $item) {
             print_r($item);
         }
 

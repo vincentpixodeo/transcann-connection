@@ -4,7 +4,7 @@
  * Email: vincent@pixodeo.net
  */
 
-namespace WMS\Xtent\Apis\Item;
+namespace WMS\Xtent\Apis\Office;
 
 use WMS\Xtent\Contracts\HasLoadByKeysFunction;
 

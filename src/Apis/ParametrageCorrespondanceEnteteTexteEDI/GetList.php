@@ -4,7 +4,7 @@
  * Email: vincent@pixodeo.net
  */
 
-namespace WMS\Xtent\Apis\Item;
+namespace WMS\Xtent\Apis\ParametrageCorrespondanceEnteteTexteEDI;
 
 use WMS\Xtent\Contracts\HasLoadListFunction;
 use WMS\Xtent\Contracts\RequestActionInterface;
@@ -16,6 +16,7 @@ class GetList extends HttpAuthRequest implements RequestActionInterface
 
     protected array $_data = [
         'pageNumber' => 1,
-        "metaId" => "d018553b-afbe-4668-ab97-debc2a8adc3a"
+        "metaId" => "f7cfafdd-64b0-4dde-aaeb-cb9bea9f7250"
     ];
+
 }

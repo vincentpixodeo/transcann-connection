@@ -19,7 +19,7 @@ class HttpAuthRequest extends AbstractRequestAction implements HttpRequestInterf
 
     public function __construct(ClientInterface $client = null)
     {
-        $this->authentication = WmsXtentService::instance()->getAuthentication();
+        $this->authentication = WmsXtentService::authentication();
         parent::__construct($this->authentication->getClient());
     }
 

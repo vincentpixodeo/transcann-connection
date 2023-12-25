@@ -28,7 +28,6 @@ abstract class AbstractRequestAction implements RequestActionInterface
 
     public function __construct(ClientInterface $client = null)
     {
-
         is_null($client) && $client = WmsXtentService::instance()->getClient();
         $this->_client = $client;
     }
@@ -38,7 +37,7 @@ abstract class AbstractRequestAction implements RequestActionInterface
         return $this->_client;
     }
 
-    public function validate(): bool
+    public function validate(array $data): bool
     {
         if (!in_array($this->_method, [
             RequestActionInterface::METHOD_GET,
@@ -46,7 +45,7 @@ abstract class AbstractRequestAction implements RequestActionInterface
             RequestActionInterface::METHOD_PUT,
             RequestActionInterface::METHOD_DELETE,
         ])) {
-            $this->_errors[] = new Exception("{$this->_method} invalid");
+            $this->addError("{$this->_method} invalid");
         }
 
         return empty($this->_errors);
@@ -64,9 +63,9 @@ abstract class AbstractRequestAction implements RequestActionInterface
     function getUri(): string
     {
         if (empty($this->uri)) {
-            $uri = preg_replace('/WMS\\\Xtent\\\/', '',static::class);
-            $uri = preg_replace('/Apis\\\/', '',$uri);
-            $uri = preg_replace('/\\\/', '/',$uri);
+            $uri = preg_replace('/WMS\\\Xtent\\\/', '', static::class);
+            $uri = preg_replace('/Apis\\\/', '', $uri);
+            $uri = preg_replace('/\\\/', '/', $uri);
             $this->uri = $uri;
         }
 
@@ -78,10 +77,11 @@ abstract class AbstractRequestAction implements RequestActionInterface
      */
     protected function requestApi(array $data = [], array $headers = []): bool
     {
-        if ($this->validate()) {
+        $dataSend = array_merge($this->_data, $data);
+        if ($this->validate($dataSend)) {
             $this->_response = $this->getClient()->{strtolower($this->_method)}(
                 $this->getUri(),
-                array_merge($this->_data, $data),
+                $dataSend,
                 array_merge($this->_headers, $headers)
             );
             if ($this->getResponse() || $this->getResponse()->getCode() > 300 && $data = $this->getResponse()->getData()) {
@@ -107,6 +107,12 @@ abstract class AbstractRequestAction implements RequestActionInterface
     public function getErrors(): array
     {
         return $this->_errors;
+    }
+
+    protected function addError(string $message): static
+    {
+        $this->_errors[] = new Exception($message);
+        return $this;
     }
 
 }
