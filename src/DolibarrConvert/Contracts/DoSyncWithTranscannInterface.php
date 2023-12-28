@@ -17,7 +17,7 @@ use WMS\Xtent\Contracts\ObjectDataInterface;
  * @property string price
  * @see
  */
-interface DoSyncWithTranscann
+interface DoSyncWithTranscannInterface
 {
     /**
      * Update current Instance with Data from Transcann

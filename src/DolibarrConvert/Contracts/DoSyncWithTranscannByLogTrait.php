@@ -15,6 +15,13 @@ trait DoSyncWithTranscannByLogTrait
 {
     protected $loggers = [];
     protected $itemName = 'item';
+    
+
+    /**
+     * get Main Table
+     * @return string
+     */
+    abstract protected function getMainTable(): string;
 
     protected function getPathLog(string $tableName = null): string
     {
@@ -37,13 +44,13 @@ trait DoSyncWithTranscannByLogTrait
 
     public function save(array $data = [])
     {
-        $path = $this->getPathLog($this->mainTable);
+        $path = $this->getPathLog($this->getMainTable());
         $fileName = $this->itemName . '-' . $this->rowid;
         $content = $this->toArray();
         if (file_exists($path . '/' . $fileName)) {
             $content = array_merge(json_decode(file_get_contents($path . '/' . $fileName)), $content);
         }
-        $this->getLog($this->mainTable)->write(array_merge($content, $data), $fileName);
+        $this->getLog($this->getMainTable())->write(array_merge($content, $data), $fileName);
         return true;
     }
 
@@ -87,7 +94,7 @@ trait DoSyncWithTranscannByLogTrait
 
     function createNewMappingInstance($data): ?array
     {
-        $this->getLog("mapping_" . $this->mainTable)->write($data, $data['fileName']);
+        $this->getLog("mapping_" . $this->getMainTable())->write($data, $data['fileName']);
         /*Check to see if there is a map*/
 
         /*Create new mapping when dont exist*/
@@ -107,7 +114,7 @@ trait DoSyncWithTranscannByLogTrait
         if ($transcannId = $data['transcann_id']) {
             $newFileName = preg_replace('/(\d+)-((?:temp_)?\d+)/', '$1-' . $transcannId, $newFileName);
         }
-        $path = $this->getPathLog("mapping_" . $this->mainTable);
+        $path = $this->getPathLog("mapping_" . $this->getMainTable());
 
         if (file_exists($path . '/' . $fileName . '.json')) {
             if ($fileName != $newFileName) {
@@ -116,7 +123,7 @@ trait DoSyncWithTranscannByLogTrait
 
             $data['fileName'] = $newFileName;
             $data['updatedAt'] = time();
-            $this->getLog("mapping_" . $this->mainTable)->write($data, $data['fileName']);
+            $this->getLog("mapping_" . $this->getMainTable())->write($data, $data['fileName']);
         }
         return $data;
     }
@@ -124,7 +131,7 @@ trait DoSyncWithTranscannByLogTrait
     function getMappingInstanceByTranscannId($id, bool $createNewIfDontExist = true): ?array
     {
         $fileName = $this->itemName . "-" . $this->rowid . "-$id";
-        $files = glob($this->getPathLog("mapping_" . $this->mainTable) . '/' . $fileName . ".json");
+        $files = glob($this->getPathLog("mapping_" . $this->getMainTable()) . '/' . $fileName . ".json");
         if ($files) {
             $content = file_get_contents($files[0]);
             return json_decode($content, true);
@@ -135,7 +142,7 @@ trait DoSyncWithTranscannByLogTrait
 
     function getMappingInstanceByObjectId($id, bool $createNewIfDontExist = true): ?array
     {
-        $files = glob($this->getPathLog("mapping_" . $this->mainTable) . '/' . $this->itemName . "-$id-*.json");
+        $files = glob($this->getPathLog("mapping_" . $this->getMainTable()) . '/' . $this->itemName . "-$id-*.json");
         if ($files) {
             $content = file_get_contents($files[0]);
             return json_decode($content, true);

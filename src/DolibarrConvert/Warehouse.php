@@ -21,8 +21,6 @@ class Warehouse extends AbstractObjectData implements ConvertTranscanInteface, O
     use ConvertTranscanTrait;
     use DoSyncWithTranscannByLogTrait;
 
-    protected $mainTable = 'warehouses';
-
     function getMapAttributes(): array
     {
         return [];
@@ -31,5 +29,10 @@ class Warehouse extends AbstractObjectData implements ConvertTranscanInteface, O
     function getTranscanInstance(): string|ObjectDataInterface
     {
         return new \WMS\Xtent\Data\Address\Warehouse();
+    }
+
+    protected function getMainTable(): string
+    {
+        return 'warehouses';
     }
 }

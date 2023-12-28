@@ -22,8 +22,6 @@ class SaleOrder extends AbstractObjectData implements ConvertTranscanInteface, O
     use ConvertTranscanTrait;
     use DoSyncWithTranscannByLogTrait;
 
-    protected $mainTable = 'sale_orders';
-
     function getMapAttributes(): array
     {
         return [];
@@ -32,5 +30,10 @@ class SaleOrder extends AbstractObjectData implements ConvertTranscanInteface, O
     function getTranscanInstance(): string|ObjectDataInterface
     {
         return new Reception();
+    }
+
+    protected function getMainTable(): string
+    {
+        return 'sale_orders';
     }
 }

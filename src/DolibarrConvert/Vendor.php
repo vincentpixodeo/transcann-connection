@@ -11,8 +11,8 @@ use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Client;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscann;
 use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
+use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
 
 /**
  * @property int rowid
@@ -22,12 +22,10 @@ use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
  * @property string price
  * $table llx_societe
  */
-class Vendor extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscann
+class Vendor extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface
 {
     use ConvertTranscanTrait;
     use DoSyncWithTranscannByLogTrait;
-
-    protected $mainTable = 'vendors';
 
     function getMapAttributes(): array
     {
@@ -43,4 +41,8 @@ class Vendor extends AbstractObjectData implements ConvertTranscanInteface, Obje
         return Client::class;
     }
 
+    protected function getMainTable(): string
+    {
+        return 'vendors';
+    }
 }
