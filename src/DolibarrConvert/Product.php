@@ -11,18 +11,23 @@ use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Item;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
+use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscann;
+use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
 
 /**
- * @property int row_id
+ * @property int rowid
  * @property string ref
  * @property string label
  * @property string description
  * @property string price
- * @see
+ * $table llx_product
  */
-class Product extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface
+class Product extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscann
 {
     use ConvertTranscanTrait;
+    use DoSyncWithTranscannByLogTrait;
+
+    protected $mainTable = 'products';
 
     function getMapAttributes(): array
     {
@@ -37,4 +42,5 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
     {
         return Item::class;
     }
+
 }

@@ -9,7 +9,8 @@ namespace WMS\Xtent\Helpers\Logs;
 class LogFile
 {
     public function __construct(protected string $directory, protected $multipleFiles = false)
-    {}
+    {
+    }
 
     function write($data, string $fileName): void
     {
@@ -22,12 +23,11 @@ class LogFile
         if ($this->multipleFiles) {
             foreach ($data as $key => $item) {
                 $content = json_encode($item);
-                file_put_contents($directory."/{$fileName}-{$key}.json", $content);
+                file_put_contents($directory . "/{$fileName}-{$key}.json", $content);
             }
         } else {
             $content = json_encode($data);
-            file_put_contents($directory."/{$fileName}.json", $content);
-
+            file_put_contents($directory . "/{$fileName}.json", $content);
         }
     }
 }

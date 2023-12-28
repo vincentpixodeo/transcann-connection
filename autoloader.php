@@ -1,6 +1,5 @@
 <?php
 
-const DOL_HTDOCS_DIR = __DIR__ . '/../../../';
 
 spl_autoload_register(function ($class_name) {
     $preg_match = preg_match('/^WMS\\\Xtent\\\/', $class_name);
@@ -18,14 +17,6 @@ spl_autoload_register(function ($class_name) {
     }
 });
 
-if (!function_exists('includeDolFile')) {
-    function includeDolFile(): void
-    {
-        foreach (func_get_args() as $file) {
-            include_once DOL_HTDOCS_DIR . trim($file, '/');
-        }
-    }
-}
 if (!function_exists('dump')) {
     function dump(): void
     {

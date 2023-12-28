@@ -1,29 +1,13 @@
 <?php
-include_once __DIR__.'/autoloader.php';
 
-
-$instance = \WMS\Xtent\WmsXtentService::instance();
-
-dd($instance);
-$content = file_get_contents(__DIR__.'/../response1.json');
-//
-//$data = json_decode($content, true)['result'];
-//$path = $instance->storagePath('/logs/receptions/');
-//
-//$logger = new \WMS\Helpers\Logs\LogFile($path, true);
-//
-//$logger->write($data, 'reception');
-//dd(1);
-foreach (json_decode($content, true)['result'] as $reception) {
-
-    dd(new \WMS\Xtent\Data\Reception($reception));
-}
-
-
-$action = $instance->getAction(\WMS\Xtent\Apis\Item::class);
-
-if ($action->execute()) {
-    dd($action->getClient()->getLogs(), $action->getResponse()->getCode());
+require __DIR__ . '/../../../master.inc.php';
+include_once __DIR__ . '/autoloader.php';
+/** @var DoliDBMysqli $db */
+if ($result = $db->query('SELECT * FROM llx_societe WHERE client = 1')) {
+    while ($data = $db->fetch_object($result)) {
+        (new \WMS\Xtent\DolibarrConvert\Customer((array)$data))->save();
+    }
 } else {
-    dd($action->getErrors());
+    dd($db->lasterror());
 }
+
