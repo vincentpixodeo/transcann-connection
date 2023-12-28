@@ -6,13 +6,40 @@
 
 include_once __DIR__ . '/../autoloader.php';
 
-$productId = 1;
-$transcannItemId = 12;
-$product = new \WMS\Xtent\DolibarrConvert\Product(['rowid' => 1]);
+$path = \WMS\Xtent\WmsXtentService::instance()->storagePath('databases/products');
 
-$api = new \WMS\Xtent\Apis\Item\GetByKeys();
-if ($api->load($transcannItemId)) {
-    $product->updateDataFromTranscann(new \WMS\Xtent\Data\Item($api->getResponse()->getData()));
+$productId = 1;
+
+$productId = $argv[1] ?? null;
+
+$pushToTranscann = empty($argv[2]);
+
+$pathFile = $path . "/item-{$productId}.json";
+if (empty($productId) || !file_exists($pathFile)) {
+    throw new Exception("Product #{$productId} not found!");
+}
+
+$data = json_decode(file_get_contents($pathFile), true);
+
+$product = new \WMS\Xtent\DolibarrConvert\Product($data);
+
+if ($pushToTranscann) {
+
+    $product->pushDataToTranscann();
+
 } else {
-    dd($api->getErrors());
+    $mapping = $product->getMappingInstanceByObjectId($productId);
+
+    $transcannItemId = $mapping['transcann_id'] ?? null;
+    if ($transcannItemId) {
+        $api = new \WMS\Xtent\Apis\Item\GetByKeys();
+        if ($api->load($transcannItemId)) {
+            $product->updateDataFromTranscann(new \WMS\Xtent\Data\Item($api->getResponse()->getData()));
+        } else {
+            dd($api->getErrors());
+        }
+    } else {
+        throw new Exception('the mapping not exist');
+    }
+
 }

@@ -6,6 +6,7 @@
 
 namespace WMS\Xtent\DolibarrConvert\Contracts;
 
+use WMS\Xtent\Apis\Item;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Helpers\Logs\LogFile;
 use WMS\Xtent\WmsXtentService;
@@ -15,7 +16,7 @@ trait DoSyncWithTranscannByLogTrait
 {
     protected $loggers = [];
     protected $itemName = 'item';
-    
+
 
     /**
      * get Main Table
@@ -74,7 +75,17 @@ trait DoSyncWithTranscannByLogTrait
 
         /* Action push data to Transcann*/
         if ($mapping) {
-            $dataSend = $objectData->convertToTranscan();
+            $dataSend = $objectData->convertToTranscan()->toArray();
+            $api = new Item();
+            if ($transcannInstance = $api->create($dataSend)) {
+                $this->updateMappingInstance(array_merge($mapping, [
+                    'transcann_id' => $transcannInstance->Id,
+                    'transcan_meta_id' => $transcannInstance->_MetaId_,
+                    'transcan_payload' => json_encode($transcannInstance->toArray())
+                ]));
+            } else {
+                dd($api->getClient()->getCurrentLog());
+            }
         }
         return false;
     }

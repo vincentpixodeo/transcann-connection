@@ -6,28 +6,51 @@
 
 namespace WMS\Xtent\Apis;
 
+use WMS\Xtent\Contracts\AbstractRequestAction;
+use WMS\Xtent\Contracts\ClientInterface;
 use WMS\Xtent\Contracts\RequestActionInterface;
-use WMS\Xtent\Http\HttpAuthRequest;
+use WMS\Xtent\WMSAuthentication;
+use WMS\Xtent\WmsXtentService;
 
-class Item extends HttpAuthRequest implements RequestActionInterface
+class Item extends AbstractRequestAction implements RequestActionInterface
 {
+    private WMSAuthentication $authentication;
 
-    public function delete(): bool
+    public function __construct(ClientInterface $client = null)
     {
-        $this->uri = 'Item/?token={TOKEN}&metaId={METAID}&id={IDS}';
+        $this->authentication = WmsXtentService::authentication();
+        parent::__construct($client ?? $this->authentication->getClient());
+    }
+
+    public function delete(string $metaId, $ids): bool
+    {
+        $this->uri = 'Item?' . http_build_query([
+                'token' => $this->authentication->getToken(),
+                'metaId' => $metaId,
+                'ids' => $ids
+            ]);
         $this->_method = self::METHOD_DELETE;
         return $this->execute();
     }
-    public function post(): bool
+
+    public function create(array $data): ?\WMS\Xtent\Data\Item
     {
-        $this->uri = 'Item/?token={TOKEN}';
+        $this->uri = 'Item?' . http_build_query(['token' => $this->authentication->getToken()]);
         $this->_method = self::METHOD_POST;
-        return $this->execute();
+        if ($this->execute($data)) {
+            return new \WMS\Xtent\Data\Item($this->getResponse()->getData());
+        }
+        return null;
     }
-    public function put(): bool
+
+    public function put(array $data): ?\WMS\Xtent\Data\Item
     {
-        $this->uri = 'Item/?token={TOKEN}';
+        $this->uri = 'Item?' . http_build_query(['token' => $this->authentication->getToken()]);
         $this->_method = self::METHOD_PUT;
-        return $this->execute();
+        if ($this->execute($data)) {
+            return new \WMS\Xtent\Data\Item($this->getResponse()->getData());
+        }
+        return null;
     }
+
 }

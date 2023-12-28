@@ -261,6 +261,7 @@ class Curl implements ClientInterface
 
         if (curl_errno($this->_curl)) {
             $this->_error = curl_error($this->_curl);
+            $this->currentLog->setResponse($this->_error, 500);
             throw new Exception($this->_error, $this->_responseCode);
         }
 
