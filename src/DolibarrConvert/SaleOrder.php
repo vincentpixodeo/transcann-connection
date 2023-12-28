@@ -15,14 +15,14 @@ use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
 
 /**
  * dolibarr data 'fourn/class/fournisseur.commande.class.php'
- * $table llx_commande_fournisseur
+ * $table llx_commande
  */
-class PurchaseOrder extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface
+class SaleOrder extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface
 {
     use ConvertTranscanTrait;
     use DoSyncWithTranscannByLogTrait;
 
-    protected $mainTable = 'vendor_orders';
+    protected $mainTable = 'sale_orders';
 
     function getMapAttributes(): array
     {
