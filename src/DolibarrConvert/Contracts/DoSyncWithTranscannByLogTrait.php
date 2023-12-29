@@ -8,164 +8,84 @@ namespace WMS\Xtent\DolibarrConvert\Contracts;
 
 use WMS\Xtent\Apis\Item;
 use WMS\Xtent\Contracts\ObjectDataInterface;
-use WMS\Xtent\Helpers\Logs\LogFile;
-use WMS\Xtent\WmsXtentService;
 
 
 trait DoSyncWithTranscannByLogTrait
 {
-    protected $loggers = [];
-    protected $itemName = 'item';
+    use CanSaveDataByLogTrait;
 
+    private $_mappingInstance = null;
 
-    /**
-     * get Main Table
-     * @return string
-     */
-    abstract protected function getMainTable(): string;
+    abstract function getMappingClass(): string;
 
-    protected function getPathLog(string $tableName = null): string
+    function getMappingInstance(array $data = []): ObjectDataInterface&CanSaveDataInterface
     {
-        if (empty($tableName)) {
-            throw new \Exception("\$tableName is empty");
+        if (is_null($this->_mappingInstance)) {
+            $this->_mappingInstance = new ($this->getMappingClass())([
+                'fk_object_id' => $this->rowid
+            ]);
+            if ($this->rowid) {
+                $this->_mappingInstance->fetch();
+            }
+            $this->_mappingInstance->addData($data);
         }
-        return WmsXtentService::instance()->storagePath('databases/' . $tableName);
+
+        return $this->_mappingInstance;
     }
 
-    protected function getLog(string $tableName = null): LogFile
+    function updateDataFromTranscann(array $data = []): bool
     {
-        if (empty($tableName)) {
-            throw new \Exception("\$tableName is empty");
-        }
-        if (empty($this->loggers[$tableName])) {
-            $this->loggers[$tableName] = new LogFile($this->getPathLog($tableName), false);
-        }
-        return $this->loggers[$tableName];
-    }
-
-    public function save(array $data = [])
-    {
-        $path = $this->getPathLog($this->getMainTable());
-        $fileName = $this->itemName . '-' . $this->rowid;
-        $content = $this->toArray();
-        if (file_exists($path . '/' . $fileName)) {
-            $content = array_merge(json_decode(file_get_contents($path . '/' . $fileName)), $content);
-        }
-        $this->getLog($this->getMainTable())->write(array_merge($content, $data), $fileName);
-        return true;
-    }
-
-    function updateDataFromTranscann(ObjectDataInterface $objectData, array $mapping = null): bool
-    {
-        is_null($mapping) && $mapping = $this->getMappingInstanceByTranscannId($objectData->Id);
+        $mapping = $this->getMappingInstance()->fetch();
 
         /* Action save data from Transcann*/
         if ($mapping) {
-            $dataSave = $this->createFromTranscan($objectData)->toArray();
-            $this->updateMappingInstance(array_merge($mapping, ['transcann_id' => $objectData->Id]));
-            return $this->save($dataSave);
+            /*Fetch Data Transcann*/
+            $api = new Item\GetByKeys();
+            if ($api->load($mapping->transcann_id)) {
+                $objectData = new \WMS\Xtent\Data\Item($api->getResponse()->getData());
+                $dataSave = $this->createFromTranscan($objectData)->toArray();
+                $this->save(array_merge($data, $dataSave));
+            } else {
+                dd($api->getErrors());
+            }
         }
         return false;
     }
 
-    function pushDataToTranscann(self|ObjectDataInterface $objectData = null, array $mapping = null): bool
+    function pushDataToTranscann(array $data = []): bool
     {
-        is_null($objectData) && $objectData = $this;
-        is_null($mapping) && $mapping = $this->getMappingInstanceByObjectId($objectData->rowid);
+        $mapping = $this->getMappingInstance()->fetch();
 
         /* Action push data to Transcann*/
         if ($mapping) {
-            $dataSend = $objectData->convertToTranscan()->toArray();
+            $dataSend = $this->convertToTranscan()->toArray();
             $api = new Item();
-            if ($transcannInstance = $api->create($dataSend)) {
-                $this->updateMappingInstance(array_merge($mapping, [
-                    'transcann_id' => $transcannInstance->Id,
-                    'transcan_meta_id' => $transcannInstance->_MetaId_,
-                    'transcan_payload' => json_encode($transcannInstance->toArray())
-                ]));
+            $transcannId = $mapping->transcann_id ?? null;
+            $dataSend += $data;
+            if ($transcannId) {
+                if ($transcannInstance = $api->put($transcannId, $dataSend)) {
+                    $mapping->save([
+                        'transcann_id' => $transcannInstance->ClientCodeId,
+                        'transcann_client_id' => $transcannInstance->ClientCodeId,
+                        'transcan_meta_id' => $transcannInstance->_MetaId_,
+                        'transcan_payload' => json_encode($transcannInstance->toArray())
+                    ]);
+                } else {
+                    dd($api->getClient()->getCurrentLog());
+                }
             } else {
-                dd($api->getClient()->getCurrentLog());
+                if ($transcannInstance = $api->create($dataSend)) {
+                    $mapping->save([
+                        'transcann_id' => $transcannInstance->Id,
+                        'transcann_client_id' => $transcannInstance->ClientCodeId,
+                        'transcan_meta_id' => $transcannInstance->_MetaId_,
+                        'transcan_payload' => json_encode($transcannInstance->toArray())
+                    ]);
+                } else {
+                    dd($api->getClient()->getCurrentLog());
+                }
             }
         }
         return false;
-    }
-
-    function fetchDataFromTranscann(self|ObjectDataInterface $objectData = null, array $mapping = null): bool
-    {
-        is_null($objectData) && $objectData = $this;
-        is_null($mapping) && $mapping = $this->getMappingInstanceByObjectId($objectData->rowid);
-
-        /* Action fetch data to Transcann*/
-        if ($mapping) {
-            /** @var ObjectDataInterface $transcanInstance */
-            $dataSave = $this->updateDataFromTranscann($transcanInstance);
-        }
-        return false;
-    }
-
-    function createNewMappingInstance($data): ?array
-    {
-        $this->getLog("mapping_" . $this->getMainTable())->write($data, $data['fileName']);
-        /*Check to see if there is a map*/
-
-        /*Create new mapping when dont exist*/
-
-        /*return mapping data*/
-        return $data;
-    }
-
-    function updateMappingInstance(array $data): ?array
-    {
-
-        $fileName = $data['fileName'];
-        $newFileName = $fileName;
-        if ($obId = $data['fk_object_id']) {
-            $newFileName = preg_replace('/((?:temp_)?\d+)-(\d+)/', $obId . '-$2', $newFileName);
-        }
-        if ($transcannId = $data['transcann_id']) {
-            $newFileName = preg_replace('/(\d+)-((?:temp_)?\d+)/', '$1-' . $transcannId, $newFileName);
-        }
-        $path = $this->getPathLog("mapping_" . $this->getMainTable());
-
-        if (file_exists($path . '/' . $fileName . '.json')) {
-            if ($fileName != $newFileName) {
-                rename($path . '/' . $fileName . '.json', $path . '/' . $newFileName . '.json');
-            }
-
-            $data['fileName'] = $newFileName;
-            $data['updatedAt'] = time();
-            $this->getLog("mapping_" . $this->getMainTable())->write($data, $data['fileName']);
-        }
-        return $data;
-    }
-
-    function getMappingInstanceByTranscannId($id, bool $createNewIfDontExist = true): ?array
-    {
-        $fileName = $this->itemName . "-" . $this->rowid . "-$id";
-        $files = glob($this->getPathLog("mapping_" . $this->getMainTable()) . '/' . $fileName . ".json");
-        if ($files) {
-            $content = file_get_contents($files[0]);
-            return json_decode($content, true);
-        }
-
-        return $this->getMappingInstanceByObjectId($this->rowid);
-    }
-
-    function getMappingInstanceByObjectId($id, bool $createNewIfDontExist = true): ?array
-    {
-        $files = glob($this->getPathLog("mapping_" . $this->getMainTable()) . '/' . $this->itemName . "-$id-*.json");
-        if ($files) {
-            $content = file_get_contents($files[0]);
-            return json_decode($content, true);
-        }
-
-        if ($createNewIfDontExist) {
-            return $this->createNewMappingInstance([
-                'fk_object_id' => $id,
-                'fileName' => $this->itemName . "-$id-temp_$id",
-                'createdAt' => time()
-            ]);
-        }
-        return null;
     }
 }

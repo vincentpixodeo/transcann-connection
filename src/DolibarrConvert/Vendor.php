@@ -9,10 +9,13 @@ namespace WMS\Xtent\DolibarrConvert;
 use WMS\Xtent\Contracts\AbstractObjectData;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Client;
+use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataByLogTrait;
+use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
 use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
 use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
+use WMS\Xtent\DolibarrConvert\Pivots\MappingVendor;
 
 /**
  * @property int rowid
@@ -22,10 +25,11 @@ use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
  * @property string price
  * $table llx_societe
  */
-class Vendor extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface
+class Vendor extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface, CanSaveDataInterface
 {
     use ConvertTranscanTrait;
     use DoSyncWithTranscannByLogTrait;
+    use CanSaveDataByLogTrait;
 
     function getMapAttributes(): array
     {
@@ -44,5 +48,10 @@ class Vendor extends AbstractObjectData implements ConvertTranscanInteface, Obje
     protected function getMainTable(): string
     {
         return 'vendors';
+    }
+
+    function getMappingClass(): string
+    {
+        return MappingVendor::class;
     }
 }

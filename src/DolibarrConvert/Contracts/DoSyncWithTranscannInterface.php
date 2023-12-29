@@ -20,56 +20,23 @@ use WMS\Xtent\Contracts\ObjectDataInterface;
 interface DoSyncWithTranscannInterface
 {
     /**
-     * Update current Instance with Data from Transcann
-     * @param ObjectDataInterface $objectData
-     * @param array|null $mapping
+     * Fetch And Update current Instance with Data from Transcann
+     * @param array $data
      * @return bool
      */
-    function updateDataFromTranscann(ObjectDataInterface $objectData, array $mapping = null): bool;
+    function updateDataFromTranscann(array $data = []): bool;
 
     /**
      * Push current Instance to Transann
-     * @param ObjectDataInterface|null $objectData
-     * @param array|null $mapping
-     * @return bool
-     */
-    function pushDataToTranscann(ObjectDataInterface $objectData = null, array $mapping = null): bool;
-
-    /**
-     * Fetch data from Transcan
-     * @param ObjectDataInterface|null $objectData
-     * @param array|null $mapping
-     * @return bool
-     */
-    function fetchDataFromTranscann(ObjectDataInterface $objectData = null, array $mapping = null): bool;
-
-    /**
-     * Create Mapping Instance
-     * @param $data
-     * @return array|null
-     */
-    function createNewMappingInstance($data): ?array;
-
-    /**
-     * update Mapping Instance
      * @param array $data
-     * @return array|null
+     * @return bool
      */
-    function updateMappingInstance(array $data): ?array;
+    function pushDataToTranscann(array $data = []): bool;
 
     /**
-     * Get Mapping Instance By Transcann Id
-     * @param $id
-     * @param bool $createNewIfDontExist
-     * @return array|null
+     * get Mapping Instance
+     * @param array $data
+     * @return CanSaveDataInterface&ObjectDataInterface
      */
-    function getMappingInstanceByTranscannId($id, bool $createNewIfDontExist = true): ?array;
-
-    /**
-     * Get Mapping Instance by Object Id
-     * @param $id
-     * @param bool $createNewIfDontExist
-     * @return array|null
-     */
-    function getMappingInstanceByObjectId($id, bool $createNewIfDontExist = true): ?array;
+    function getMappingInstance(array $data = []): ObjectDataInterface&CanSaveDataInterface;
 }

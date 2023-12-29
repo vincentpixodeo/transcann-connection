@@ -8,7 +8,7 @@ namespace WMS\Xtent\Contracts;
 
 use WMS\Xtent\Helpers\Attribute;
 
-class AbstractObjectData implements ObjectDataInterface
+class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
 {
     /**
      * @var Attribute[]
@@ -27,28 +27,41 @@ class AbstractObjectData implements ObjectDataInterface
 
     }
 
-    private function _initCasts(): void
+    /**
+     * @throws \ReflectionException
+     */
+    private function _initCasts($class = null): void
     {
-        if (isset(static::$casts[static::class]))
+        is_null($class) && $class = static::class;
+
+        if (isset(static::$casts[$class]))
             return;
 
-        $reflector = new \ReflectionClass(static::class);
+        $reflector = new \ReflectionClass($class);
+
+        if ($parent = $reflector->getParentClass()) {
+            $parentClassName = $parent->getName();
+            $this->_initCasts($parentClassName);
+            static::$casts[$class] = static::$casts[$parentClassName];
+        } else {
+            static::$casts[$class] = [];
+        }
 
         $docs = $reflector->getDocComment();
         $pattern = "#@property\s*(([\w\\\]+)(\[])*)\s+([\w_]+)\s+([\w\s]*)#";
-        static::$casts[static::class] = [];
+
         if ($docs) {
             preg_match_all($pattern, $docs, $matches, PREG_SET_ORDER);
             foreach ($matches as $attribute) {
                 list($full, $propertyInstance, $instance, $isArray, $property, $description) = $attribute;
 
                 if (!in_array($instance, Attribute::SYSTEM_INSTANCES) && !class_exists($instance)) {
-                    $message = "Please add full path of property " . static::class . "::{$property}. Autoload property for " . static::class . " at file {$reflector->getFileName()}";
+                    $message = "Please add full path of property " . $class . "::{$property}. Autoload property for " . $class . " at file {$reflector->getFileName()}";
                     if (!class_exists($instance = $reflector->getNamespaceName() . "\\" . $instance) && !class_exists($instance = "WMS\\Data\\" . $instance)) {
                         throw new \Exception($message);
                     }
                 }
-                static::$casts[static::class][$property] = new Attribute($property, $instance, !empty($isArray), $description);
+                static::$casts[$class][$property] = new Attribute($property, $instance, !empty($isArray), $description);
             }
         }
     }
@@ -137,4 +150,23 @@ class AbstractObjectData implements ObjectDataInterface
         return $this->getData($name);
     }
 
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->_data[$offset]);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return $this->getData($offset);
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        array_merge($this->_data, $this->_convertData([$offset => $value]));
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->_data[$offset]);
+    }
 }

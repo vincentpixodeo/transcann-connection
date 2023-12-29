@@ -43,10 +43,11 @@ class Item extends AbstractRequestAction implements RequestActionInterface
         return null;
     }
 
-    public function put(array $data): ?\WMS\Xtent\Data\Item
+    public function put(int $id, array $data): ?\WMS\Xtent\Data\Item
     {
         $this->uri = 'Item?' . http_build_query(['token' => $this->authentication->getToken()]);
         $this->_method = self::METHOD_PUT;
+        $data['Id'] = $id;
         if ($this->execute($data)) {
             return new \WMS\Xtent\Data\Item($this->getResponse()->getData());
         }

@@ -22,6 +22,7 @@ if (empty($productId) || !file_exists($pathFile)) {
 $data = json_decode(file_get_contents($pathFile), true);
 
 $product = new \WMS\Xtent\DolibarrConvert\Product($data);
+$product->setData(['client_id' => 2000]);
 
 if ($pushToTranscann) {
 
