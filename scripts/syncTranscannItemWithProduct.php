@@ -29,7 +29,7 @@ if ($pushToTranscann) {
     $product->pushDataToTranscann();
 
 } else {
-    $mapping = $product->getMappingInstanceByObjectId($productId);
+    $mapping = $product->getMappingInstance()->fetch();
 
     $transcannItemId = $mapping['transcann_id'] ?? null;
     if ($transcannItemId) {

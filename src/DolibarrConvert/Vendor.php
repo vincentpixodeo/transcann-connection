@@ -54,4 +54,11 @@ class Vendor extends AbstractObjectData implements ConvertTranscanInteface, Obje
     {
         return MappingVendor::class;
     }
+
+    function getAppendAttributes(): array
+    {
+        return [
+            'WarehousePartyCategory' => 1
+        ];
+    }
 }

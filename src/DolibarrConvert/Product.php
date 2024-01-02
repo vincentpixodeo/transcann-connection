@@ -34,8 +34,7 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
         return [
             'label' => 'Description',
             'ref' => 'ItemCode',
-            'price' => 'Value',
-            'vendor_id' => "ClientCodeId"
+            'price' => 'Value'
         ];
     }
 
@@ -52,5 +51,10 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
     function getMappingClass(): string
     {
         return MappingProduct::class;
+    }
+
+    function getAppendAttributes(): array
+    {
+        return ['ClientCodeId' => 2000];
     }
 }

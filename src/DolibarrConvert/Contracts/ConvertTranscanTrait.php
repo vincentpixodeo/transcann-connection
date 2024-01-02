@@ -13,6 +13,8 @@ trait ConvertTranscanTrait
 {
     abstract function getMapAttributes(): array;
 
+    abstract function getAppendAttributes(): array;
+
     abstract function getTranscanInstance(): string|ObjectDataInterface;
 
     public function isTranscanInstance(ObjectDataInterface $instance): bool
@@ -50,6 +52,8 @@ trait ConvertTranscanTrait
             $value instanceof ObjectDataInterface && $value = $value->toArray();
             $instance->addData([$transcanAttribute => $value]);
         }
+
+        $instance->addData($this->getAppendAttributes());
         return $instance;
     }
 }
