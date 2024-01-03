@@ -41,7 +41,7 @@ class Curl implements ClientInterface
 
     protected ?Response $_responseInstance = null;
 
-    protected ?Log $currentLog;
+    protected ?Log $currentLog = null;
 
     protected array $logs = [];
 
