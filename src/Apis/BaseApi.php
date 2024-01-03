@@ -22,7 +22,7 @@ abstract class BaseApi extends AbstractRequestAction implements RequestActionInt
         parent::__construct($client ?? $this->authentication->getClient());
     }
 
-    function getUri(): string
+    private function getBaseUri(): string
     {
         $uri = preg_replace('/WMS\\\Xtent\\\/', '', static::class);
         $uri = preg_replace('/Apis\\\/', '', $uri);
@@ -32,7 +32,7 @@ abstract class BaseApi extends AbstractRequestAction implements RequestActionInt
 
     public function delete(string $metaId, $ids): bool
     {
-        $this->uri = $this->getUri() . '?' . http_build_query([
+        $this->uri = $this->getBaseUri() . '?' . http_build_query([
                 'token' => $this->authentication->getToken(),
                 'metaId' => $metaId,
                 'ids' => $ids
@@ -43,14 +43,14 @@ abstract class BaseApi extends AbstractRequestAction implements RequestActionInt
 
     public function create(array $data): bool
     {
-        $this->uri = $this->getUri() . '?' . http_build_query(['token' => $this->authentication->getToken()]);
+        $this->uri = $this->getBaseUri() . '?' . http_build_query(['token' => $this->authentication->getToken()]);
         $this->_method = self::METHOD_POST;
         return $this->execute($data);
     }
 
     public function put(int $id, array $data): bool
     {
-        $this->uri = $this->getUri() . '?' . http_build_query(['token' => $this->authentication->getToken()]);
+        $this->uri = $this->getBaseUri() . '?' . http_build_query(['token' => $this->authentication->getToken()]);
         $this->_method = self::METHOD_PUT;
         $data['Id'] = $id;
         return $this->execute($data);

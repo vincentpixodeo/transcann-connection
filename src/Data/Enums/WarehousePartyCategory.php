@@ -8,8 +8,8 @@ namespace WMS\Xtent\Data\Enums;
 
 enum WarehousePartyCategory: int
 {
-    case Supplier = 1;
-    case Recipient = 2;
-    case Store = 3;
-    case Carrier = 4;
+    case Supplier = 0;
+    case Recipient = 1;
+    case Store = 2;
+    case Carrier = 3;
 }

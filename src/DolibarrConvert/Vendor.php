@@ -56,7 +56,8 @@ class Vendor extends AbstractObjectData implements ConvertTranscanInteface, Obje
     function getAppendAttributes(): array
     {
         return [
-            'WarehousePartyCategory' => WarehousePartyCategory::Supplier->value
+            'WarehousePartyCategory' => WarehousePartyCategory::Supplier->value,
+            'Id' => $this->rowid
         ];
     }
 

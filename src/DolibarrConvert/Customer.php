@@ -32,9 +32,8 @@ class Customer extends AbstractObjectData implements ConvertTranscanInteface, Ob
     function getMapAttributes(): array
     {
         return [
-            'label' => 'Description',
-            'ref' => 'ItemCode',
-            'price' => 'Value'
+            'nom' => 'Name',
+            'name_alias' => 'ShortName',
         ];
     }
 
@@ -52,7 +51,8 @@ class Customer extends AbstractObjectData implements ConvertTranscanInteface, Ob
     function getAppendAttributes(): array
     {
         return [
-            'WarehousePartyCategory' => WarehousePartyCategory::Recipient->value
+            'WarehousePartyCategory' => WarehousePartyCategory::Recipient->value,
+            'Id' => $this->rowid
         ];
     }
 
