@@ -6,7 +6,7 @@
 
 namespace WMS\Xtent\Apis;
 
-class Item extends BaseApi
+class Warehouse extends BaseApi
 {
 
 }

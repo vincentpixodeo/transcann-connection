@@ -57,4 +57,49 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
     {
         return ['ClientCodeId' => 2000];
     }
+
+
+    function updateDataFromTranscann(array $data = []): bool
+    {
+        return true;
+    }
+
+    function pushDataToTranscann(array $data = []): bool
+    {
+        $mapping = $this->getMappingInstance()->fetch();
+
+        /* Action push data to Transcann*/
+        if ($mapping) {
+            $dataSend = $this->convertToTranscan()->toArray();
+            $api = new \WMS\Xtent\Apis\Item();
+            $transcannId = $mapping->transcann_id ?? null;
+            $dataSend += $data;
+            if ($transcannId) {
+                if ($api->put($transcannId, $dataSend)) {
+                    $transcannInstance = new Item($api->getResponse()->getData());
+                    $mapping->save([
+                        'transcann_id' => $transcannInstance->Id,
+                        'transcann_client_id' => $transcannInstance->ClientCodeId,
+                        'transcan_meta_id' => $transcannInstance->_MetaId_,
+                        'transcan_payload' => json_encode($transcannInstance->toArray())
+                    ]);
+                } else {
+                    dd($api->getClient()->getCurrentLog());
+                }
+            } else {
+                if ($api->create($dataSend)) {
+                    $transcannInstance = new Item($api->getResponse()->getData());
+                    $mapping->save([
+                        'transcann_id' => $transcannInstance->Id,
+                        'transcann_client_id' => $transcannInstance->ClientCodeId,
+                        'transcan_meta_id' => $transcannInstance->_MetaId_,
+                        'transcan_payload' => json_encode($transcannInstance->toArray())
+                    ]);
+                } else {
+                    dd($api->getClient()->getCurrentLog());
+                }
+            }
+        }
+        return false;
+    }
 }

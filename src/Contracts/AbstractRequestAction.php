@@ -84,7 +84,7 @@ abstract class AbstractRequestAction implements RequestActionInterface
                 $dataSend,
                 array_merge($this->_headers, $headers)
             );
-            if ($this->getResponse() || $this->getResponse()->getCode() > 300 && $data = $this->getResponse()->getData()) {
+            if ($this->getResponse() && $this->getResponse()->getCode() > 300 && $data = $this->getResponse()->getData()) {
                 if (is_array($data) && isset($data['Message'])) {
                     throw new Exception($data['Message'], $this->getResponse()->getCode());
                 }
@@ -113,6 +113,22 @@ abstract class AbstractRequestAction implements RequestActionInterface
     {
         $this->_errors[] = new Exception($message);
         return $this;
+    }
+
+    /**
+     * @param string|null $uri
+     */
+    public function setUri(?string $uri): void
+    {
+        $this->uri = $uri;
+    }
+
+    /**
+     * @param string $method
+     */
+    public function setMethod(string $method): void
+    {
+        $this->_method = $method;
     }
 
 }

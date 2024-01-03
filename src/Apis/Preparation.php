@@ -6,7 +6,8 @@
 
 namespace WMS\Xtent\Apis;
 
-class Item extends BaseApi
+class Preparation extends BaseApi
 {
+
 
 }
