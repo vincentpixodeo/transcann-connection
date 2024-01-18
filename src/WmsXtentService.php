@@ -17,16 +17,19 @@ use WMS\Xtent\Http\Exception;
  * @method static WMSAuthentication authentication()
  * @method static object action(string $className, array $params = [])
  */
-
 class WmsXtentService
 {
     static protected ?WmsXtentService $_instance = null;
-    protected array $configs;
     protected ?WMSAuthentication $authentication = null;
+    protected array $configs;
 
     public function __construct()
     {
-        $this->configs = include __DIR__.'/config.php';
+        if (is_null(static::$_instance)) {
+            $this->configs = include __DIR__ . '/config.php';
+        } else {
+            $this->configs = static::$_instance->getConfig();
+        }
     }
 
     /**
@@ -52,7 +55,7 @@ class WmsXtentService
      */
     function storagePath(string $path = ''): string
     {
-        $root = trim($this->getConfig('storage', __DIR__.'/storage'), '\\/');
+        $root = trim($this->getConfig('storage', __DIR__ . '/storage'), '\\/');
         $path = trim($path ?? '', '\\/');
 
         $path = preg_replace('/\\\/', '/', $path);
@@ -93,7 +96,7 @@ class WmsXtentService
         $action = new $className(...$params);
 
         if (!$action instanceof RequestActionInterface) {
-            throw new \Exception($className. ' must be instance of '. RequestActionInterface::class);
+            throw new \Exception($className . ' must be instance of ' . RequestActionInterface::class);
         }
 
         return $action;
@@ -111,11 +114,21 @@ class WmsXtentService
     }
 
     /**
+     * Refresh to Clear Memory
+     * @return void
+     */
+    public function refresh(): void
+    {
+        unset($this->authentication);
+        $this->authentication = null;
+    }
+
+    /**
      * @throws Exception
      */
     public static function __callStatic(string $name, array $arguments)
     {
-        $method = 'get'.ucfirst($name);
+        $method = 'get' . ucfirst($name);
         if (method_exists(static::class, $method)) {
             return static::instance()->{$method}(...$arguments);
         }

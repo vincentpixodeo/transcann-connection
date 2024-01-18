@@ -20,25 +20,26 @@ trait CanSaveDataByLogTrait
      */
     abstract protected function getMainTable(): string;
 
-    function fetch(...$agruments): ?static
+    function fetch($id = null, $field = null): ?static
     {
-        $rowId = $agruments[0] ?? $this->rowid;
-        $isNewInstance = $rowId != $this->rowid;
+        $primaryKey = $this->getPrimaryKey();
+        $rowId = $id ?? $this->{$primaryKey} ?? null;
 
         $file = $this->getPathLog($this->getMainTable()) . '/' . $this->itemName . "-$rowId.json";
 
         if (file_exists($file)) {
             $content = json_decode(file_get_contents($file), true);
-            return $isNewInstance ? new static($content) : $this->addData($content);
+            return $this->addData($content);
         }
         return null;
     }
 
     public function save(array $data = []): bool
     {
+        $primaryKey = $this->getPrimaryKey();
         $this->addData($data);
         $path = $this->getPathLog($this->getMainTable());
-        $fileName = $this->itemName . '-' . $this->rowid;
+        $fileName = $this->itemName . '-' . $this->{$primaryKey};
         if (file_exists($path . '/' . $fileName)) {
             $this->addData(json_decode(file_get_contents($path . '/' . $fileName)));
         }

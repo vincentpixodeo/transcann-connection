@@ -12,8 +12,8 @@ use WMS\Xtent\Data\Preparation;
 use WMS\Xtent\Data\Reception;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
 use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
+use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannTrait;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingPurchaseOrder;
 
 /**
@@ -23,7 +23,7 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingPurchaseOrder;
 class PurchaseOrder extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface
 {
     use ConvertTranscanTrait;
-    use DoSyncWithTranscannByLogTrait;
+    use DoSyncWithTranscannTrait;
 
     function getMapAttributes(): array
     {
@@ -35,9 +35,9 @@ class PurchaseOrder extends AbstractObjectData implements ConvertTranscanIntefac
         return new Preparation();
     }
 
-    protected function getMainTable(): string
+    public function getMainTable(): string
     {
-        return 'vendor_orders';
+        return 'commande_fournisseur';
     }
 
     function getAppendAttributes(): array
@@ -92,5 +92,10 @@ class PurchaseOrder extends AbstractObjectData implements ConvertTranscanIntefac
             }
         }
         return false;
+    }
+
+    public function getPrimaryKey(): string
+    {
+        return 'rowid';
     }
 }

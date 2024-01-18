@@ -12,8 +12,8 @@ use WMS\Xtent\Data\Client;
 use WMS\Xtent\Data\Enums\WarehousePartyCategory;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
 use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
+use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannTrait;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingCustomer;
 
 /**
@@ -27,7 +27,7 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingCustomer;
 class Customer extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface
 {
     use ConvertTranscanTrait;
-    use DoSyncWithTranscannByLogTrait;
+    use DoSyncWithTranscannTrait;
 
     function getMapAttributes(): array
     {
@@ -42,9 +42,9 @@ class Customer extends AbstractObjectData implements ConvertTranscanInteface, Ob
         return Client::class;
     }
 
-    protected function getMainTable(): string
+    public function getMainTable(): string
     {
-        return 'customers';
+        return 'societe';
     }
 
 
@@ -103,4 +103,15 @@ class Customer extends AbstractObjectData implements ConvertTranscanInteface, Ob
         return false;
     }
 
+    protected function defaultCondition(): array
+    {
+        return [
+            'client' => 1
+        ];
+    }
+
+    public function getPrimaryKey(): string
+    {
+        return 'rowid';
+    }
 }

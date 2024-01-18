@@ -39,12 +39,12 @@ abstract class AbstractRequestAction implements RequestActionInterface
 
     public function validate(array $data): bool
     {
-        if (!in_array($this->_method, [
-            RequestActionInterface::METHOD_GET,
-            RequestActionInterface::METHOD_POST,
-            RequestActionInterface::METHOD_PUT,
-            RequestActionInterface::METHOD_DELETE,
-        ])) {
+        if (empty($this->_errors) && !in_array($this->_method, [
+                RequestActionInterface::METHOD_GET,
+                RequestActionInterface::METHOD_POST,
+                RequestActionInterface::METHOD_PUT,
+                RequestActionInterface::METHOD_DELETE,
+            ])) {
             $this->addError("{$this->_method} invalid");
         }
 
@@ -78,6 +78,7 @@ abstract class AbstractRequestAction implements RequestActionInterface
     protected function requestApi(array $data = [], array $headers = []): bool
     {
         $dataSend = array_merge($this->_data, $data);
+
         if ($this->validate($dataSend)) {
             $this->_response = $this->getClient()->{strtolower($this->_method)}(
                 $this->getUri(),

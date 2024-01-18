@@ -13,8 +13,8 @@ use WMS\Xtent\Data\Enums\WarehousePartyCategory;
 use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
 use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
+use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannTrait;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingVendor;
 
 /**
@@ -28,7 +28,7 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingVendor;
 class Vendor extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface, CanSaveDataInterface
 {
     use ConvertTranscanTrait;
-    use DoSyncWithTranscannByLogTrait;
+    use DoSyncWithTranscannTrait;
 
     function getMapAttributes(): array
     {
@@ -43,9 +43,9 @@ class Vendor extends AbstractObjectData implements ConvertTranscanInteface, Obje
         return Client::class;
     }
 
-    protected function getMainTable(): string
+    public function getMainTable(): string
     {
-        return 'vendors';
+        return 'societe';
     }
 
     function getMappingClass(): string
@@ -101,5 +101,17 @@ class Vendor extends AbstractObjectData implements ConvertTranscanInteface, Obje
             }
         }
         return false;
+    }
+
+    protected function defaultCondition(): array
+    {
+        return [
+            'fournisseur' => 1
+        ];
+    }
+
+    public function getPrimaryKey(): string
+    {
+        return 'rowid';
     }
 }

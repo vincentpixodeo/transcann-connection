@@ -30,10 +30,20 @@ abstract class BaseApi extends AbstractRequestAction implements RequestActionInt
 
     }
 
+    private function getToken(): ?string
+    {
+        try {
+            return $this->authentication->getToken(false, true);
+        } catch (\Exception $exception) {
+            $this->_errors[] = $exception;
+            return null;
+        }
+    }
+
     public function delete(string $metaId, $ids): bool
     {
         $this->uri = $this->getBaseUri() . '?' . http_build_query([
-                'token' => $this->authentication->getToken(),
+                'token' => $this->getToken(),
                 'metaId' => $metaId,
                 'ids' => $ids
             ]);
@@ -43,14 +53,15 @@ abstract class BaseApi extends AbstractRequestAction implements RequestActionInt
 
     public function create(array $data): bool
     {
-        $this->uri = $this->getBaseUri() . '?' . http_build_query(['token' => $this->authentication->getToken()]);
+
+        $this->uri = $this->getBaseUri() . '?' . http_build_query(['token' => $this->getToken()]);
         $this->_method = self::METHOD_POST;
         return $this->execute($data);
     }
 
     public function put(int $id, array $data): bool
     {
-        $this->uri = $this->getBaseUri() . '?' . http_build_query(['token' => $this->authentication->getToken()]);
+        $this->uri = $this->getBaseUri() . '?' . http_build_query(['token' => $this->getToken()]);
         $this->_method = self::METHOD_PUT;
         $data['Id'] = $id;
         return $this->execute($data);

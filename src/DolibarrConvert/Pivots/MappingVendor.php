@@ -14,8 +14,13 @@ use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
  */
 class MappingVendor extends AbstractPivot implements ObjectDataInterface, CanSaveDataInterface
 {
-    protected function getMainTable(): string
+    public function getMainTable(): string
     {
-        return 'mapping_vendors';
+        return 'transcannconnection_mapping_vendors';
+    }
+
+    public function getPrimaryKey(): string
+    {
+        return 'id';
     }
 }

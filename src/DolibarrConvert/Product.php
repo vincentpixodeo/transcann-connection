@@ -12,8 +12,8 @@ use WMS\Xtent\Data\Item;
 use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
 use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
+use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannTrait;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingProduct;
 
 /**
@@ -22,19 +22,22 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingProduct;
  * @property string label
  * @property string description
  * @property string price
+ * @property string barcode
  * $table llx_product
  */
 class Product extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface, CanSaveDataInterface
 {
     use ConvertTranscanTrait;
-    use DoSyncWithTranscannByLogTrait;
+    use DoSyncWithTranscannTrait;
+
+    public ?ProductExtraField $extraField = null;
 
     function getMapAttributes(): array
     {
         return [
             'label' => 'Description',
             'ref' => 'ItemCode',
-            'price' => 'Value'
+            'price' => 'Value',
         ];
     }
 
@@ -43,9 +46,9 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
         return Item::class;
     }
 
-    protected function getMainTable(): string
+    public function getMainTable(): string
     {
-        return 'products';
+        return 'product';
     }
 
     function getMappingClass(): string
@@ -55,9 +58,50 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
 
     function getAppendAttributes(): array
     {
-        return ['ClientCodeId' => 2000];
+        $extraField = $this->fetchExtraFields();
+        return [
+            'ClientCodeId' => 2000,
+            "ExternalReference" => null,
+            "BatchManagement" => "L",
+            "RotationCode" => "B",
+//            "UnitCode" => $extraField?->contenance,
+            "Comments" => null,
+            "Inner" => 1,
+            "Outer" => $extraField?->unitecarton,
+            "ParcelsPerLayer" => 40,
+            "LayersPerPallet" => 6,
+            "SUWidth" => 20.0,
+            "SUDepth" => 40.0,
+            "SUHeight" => 5.0,
+            "Width" => 50,
+            "Depth" => 60,
+            "Height" => 30,
+            "PalletOccupationWidth" => 100,
+            "PalletOccupationDepth" => 100,
+            "PalletOccupationHeight" => 120,
+            "ParcelGrossWeight" => 2.6,
+            "ParcelNetWeight" => 2.6,
+            "SUGrossWeight" => $extraField?->poidsbrut,
+            "SUNetWeight" => $extraField?->poidsnet,
+            "CurrencyId" => "EUR",
+            "PackagingCode" => "EUR",
+            "InboundStatus" => null,
+//            "ReturnStatus" => "IND",
+            "OutboundStatus" => null,
+//            "SupplierCodeId" => 111,
+//            "FamilyCode" => "AAA",
+//            "EdiItemGencode" => [
+//                [
+//                    "ItemGencod" => $this->barcode
+//                ]
+//            ]
+        ];
     }
 
+    protected function fetchExtraFields(): ?ProductExtraField
+    {
+        return (new ProductExtraField())->fetch($this->{$this->getPrimaryKey()});
+    }
 
     function updateDataFromTranscann(array $data = []): bool
     {
@@ -66,6 +110,9 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
 
     function pushDataToTranscann(array $data = []): bool
     {
+        $this->fetch();
+
+        /** @var MappingProduct $mapping */
         $mapping = $this->getMappingInstance()->fetch();
 
         /* Action push data to Transcann*/
@@ -84,7 +131,8 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
                         'transcan_payload' => json_encode($transcannInstance->toArray())
                     ]);
                 } else {
-                    dd($api->getClient()->getCurrentLog());
+                    $errors = $api->getErrors();
+                    throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
                 }
             } else {
                 if ($api->create($dataSend)) {
@@ -96,10 +144,18 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
                         'transcan_payload' => json_encode($transcannInstance->toArray())
                     ]);
                 } else {
-                    dd($api->getClient()->getCurrentLog());
+                    $errors = $api->getErrors();
+                    dump($errors);
+                    throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
                 }
             }
         }
         return false;
     }
+
+    public function getPrimaryKey(): string
+    {
+        return 'rowid';
+    }
+
 }

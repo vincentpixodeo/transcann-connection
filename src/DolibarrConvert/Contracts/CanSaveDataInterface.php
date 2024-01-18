@@ -16,9 +16,21 @@ interface CanSaveDataInterface
     function save(array $data = []): bool;
 
     /**
-     * get Data saved
-     * @param ...$agruments
-     * @return ?$this
+     * @param $id
+     * @param $field
+     * @return $this|null
      */
-    function fetch(...$agruments): ?static;
+    function fetch($id = null, $field = null): ?static;
+
+    /**
+     * get Primary Key
+     * @return string
+     */
+    public function getPrimaryKey(): string;
+
+    /**
+     * get Value of primary key
+     * @return string|int|null
+     */
+    public function id(): string|int|null;
 }

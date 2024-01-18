@@ -13,6 +13,7 @@ use WMS\Xtent\Contracts\AbstractObjectData;
  * @property string _MetaId_
  * @property boolean Alcohol
  * @property int AlcoholColor
+ * @property int ClientCodeId
  * @property boolean AutomaticKitGeneration
  * @property boolean Available
  * @property int BatchManagement
@@ -174,7 +175,6 @@ use WMS\Xtent\Contracts\AbstractObjectData;
  * @property Unit Unit
  * @property Gencod[] GencodList
  */
-
 class Item extends AbstractObjectData
 {
 }

@@ -56,9 +56,9 @@ class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
                 list($full, $propertyInstance, $instance, $isArray, $property, $description) = $attribute;
 
                 if (!in_array($instance, Attribute::SYSTEM_INSTANCES) && !class_exists($instance)) {
-                    $message = "Please add full path of property " . $class . "::{$property}. Autoload property for " . $class . " at file {$reflector->getFileName()}";
+                    $message = "Please add full path of property " . $class . "::{$property}. Autoload property for " . $class;
                     if (!class_exists($instance = $reflector->getNamespaceName() . "\\" . $instance) && !class_exists($instance = "WMS\\Data\\" . $instance)) {
-                        throw new \Exception($message);
+                        trigger_error($message, E_USER_ERROR);
                     }
                 }
                 static::$casts[$class][$property] = new Attribute($property, $instance, !empty($isArray), $description);

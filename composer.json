@@ -1,5 +1,5 @@
 {
-  "name": "transcannconnection/WMS",
+  "name": "transcannconnection/wms",
   "description": "WMSXtent connection",
   "minimum-stability": "stable",
   "license": "proprietary",
@@ -10,11 +10,18 @@
     }
   ],
   "autoload": {
+    "files": [
+      "helper/functions.php"
+    ],
     "psr-4": {
-      "WMS\\Xtent": "src/"
+      "WMS\\Xtent\\": "src/"
     }
   },
   "require": {
+    "php": "^8.2",
     "ext-curl": "*"
+  },
+  "require-dev": {
+    "symfony/var-dumper": "^6.4"
   }
 }

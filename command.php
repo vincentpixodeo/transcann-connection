@@ -1,17 +1,28 @@
 <?php
-
-require __DIR__ . '/../../../master.inc.php';
+/**
+ * Created by Vincent
+ * Email: vincent@pixodeo.net
+ */
 include_once __DIR__ . '/autoloader.php';
 
+use WMS\Xtent\DolibarrConvert\Action;
 
-dd((new \WMS\Xtent\DolibarrConvert\Product())->fetch(4)->getMappingInstance()->save(['transcann_id' => 222222, 'transcann_client_id' => 2222222]));
 
-/** @var DoliDBMysqli $db */
-if ($result = $db->query('SELECT * FROM llx_entrepot')) {
-    while ($data = $db->fetch_object($result)) {
-        dump((new \WMS\Xtent\DolibarrConvert\Warehouse((array)$data))->save());
+$action = new Action();
+$db = getDbInstance();
+$tableAction = getDbPrefix() . ltrim($action->getMainTable(), getDbPrefix());
+
+while (true) {
+    $results = $db->query("SELECT * FROM {$tableAction} where status = " . Action::STATUS_INIT . " AND retries < 10 ORDER BY created_at");
+
+    if ($results) {
+        while ($row = $db->fetch_object($results)) {
+            executeAction($action->setData(array_filter((array)$row)));
+            /*Clear Memory*/
+            \WMS\Xtent\WmsXtentService::instance()->refresh();
+        }
+    } else {
+        dd($db->lasterror());
     }
-} else {
-    dd($db->lasterror());
-}
 
+}

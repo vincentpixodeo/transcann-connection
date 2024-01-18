@@ -6,6 +6,7 @@
 
 namespace WMS\Xtent;
 
+use Exception;
 use WMS\Xtent\Apis\Login\GetToken;
 use WMS\Xtent\Apis\Login\ReleaseToken;
 use WMS\Xtent\Contracts\ClientInterface;
@@ -32,16 +33,18 @@ class WMSAuthentication
     {
         $instance = WmsXtentService::instance();
         $this->_client = $instance->getClient();
-        self::$pathAuthFile = $instance->storagePath().'/auth.json';
+        self::$pathAuthFile = $instance->storagePath() . '/auth.json';
 
     }
 
 
     /**
      * @param bool $renew
+     * @param bool $withException
      * @return string|null
+     * @throws Exception
      */
-    public function getToken(bool $renew = false): ?string
+    public function getToken(bool $renew = false, bool $withException = false): ?string
     {
         try {
             if ($renew && $this->getAuthenticationData(true)) {
@@ -52,7 +55,10 @@ class WMSAuthentication
                 return $authenticationData['token'];
             }
             return null;
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
+            if ($withException) {
+                throw $exception;
+            }
             return null;
         }
     }
@@ -67,7 +73,7 @@ class WMSAuthentication
 
     /**
      * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
     protected function doAuthentication(): bool
     {
@@ -79,9 +85,12 @@ class WMSAuthentication
                 'userId' => $this->user,
                 'password' => $this->password
             ]) && $action->getResponse()->getCode() == 200) {
-            
+
             $this->setAuthenticationData($action->getResponse()->getData());
             return true;
+        }
+        if ($errors = $action->getErrors()) {
+            throw $errors[0];
         }
         return false;
     }
@@ -89,18 +98,21 @@ class WMSAuthentication
 
     /**
      * @return $this
+     * @throws Exception
      */
-    protected function releaseToken(): static
+    protected function releaseToken(bool $withException = false): static
     {
         try {
             file_put_contents(self::$pathAuthFile, '');
 
             if ($this->_authenticationData) {
                 WmsXtentService::instance()->getAction(ReleaseToken::class, [$this->_client])->execute([
-                        'token' => $this->_authenticationData['token'],
-                    ]);
+                    'token' => $this->_authenticationData['token'],
+                ]);
             }
-        } catch (\Exception $exception) {}
+        } catch (Exception $exception) {
+            if ($withException) throw $exception;
+        }
 
         /** reset authentication Data */
         $this->_authenticationData = null;
@@ -150,7 +162,7 @@ class WMSAuthentication
         /** Validation the authentication*/
         if ($this->_authenticationData) {
             $now = new \DateTime();
-            $expiredAt =  (new \DateTime())->setTimestamp($this->_authenticationData['expiredAt']);
+            $expiredAt = (new \DateTime())->setTimestamp($this->_authenticationData['expiredAt']);
             if ($now->diff($expiredAt)->invert) {
                 /** release current Token */
                 $this->releaseToken();

@@ -8,12 +8,11 @@ namespace WMS\Xtent\DolibarrConvert;
 
 use WMS\Xtent\Contracts\AbstractObjectData;
 use WMS\Xtent\Contracts\ObjectDataInterface;
-use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataByLogTrait;
 use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
 use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannByLogTrait;
 use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
+use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannTrait;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingWarehouse;
 
 /**
@@ -23,8 +22,7 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingWarehouse;
 class Warehouse extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, CanSaveDataInterface, DoSyncWithTranscannInterface
 {
     use ConvertTranscanTrait;
-    use DoSyncWithTranscannByLogTrait;
-    use CanSaveDataByLogTrait;
+    use DoSyncWithTranscannTrait;
 
     function getMapAttributes(): array
     {
@@ -36,9 +34,9 @@ class Warehouse extends AbstractObjectData implements ConvertTranscanInteface, O
         return new \WMS\Xtent\Data\Address\Warehouse();
     }
 
-    protected function getMainTable(): string
+    public function getMainTable(): string
     {
-        return 'warehouses';
+        return 'entrepot';
     }
 
     function getMappingClass(): string
@@ -91,5 +89,10 @@ class Warehouse extends AbstractObjectData implements ConvertTranscanInteface, O
             }
         }
         return false;
+    }
+
+    public function getPrimaryKey(): string
+    {
+        return 'rowid';
     }
 }
