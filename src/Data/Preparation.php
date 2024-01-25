@@ -7,10 +7,6 @@
 namespace WMS\Xtent\Data;
 
 use WMS\Xtent\Contracts\AbstractObjectData;
-use WMS\Xtent\Data\Address\City;
-use WMS\Xtent\Data\Address\Country;
-use WMS\Xtent\Data\Preparation\PreparationDetail;
-use WMS\Xtent\Data\Preparation\PreparationType;
 
 
 /**
@@ -37,8 +33,8 @@ use WMS\Xtent\Data\Preparation\PreparationType;
  * @property string ConsigneeAddress3
  * @property string ConsigneeAddress4
  * @property string ConsigneeBusinessZipCode
- * @property City ConsigneeCity
- * @property Country ConsigneeCountry
+ * @property Address\City ConsigneeCity
+ * @property Address\Country ConsigneeCountry
  * @property string ConsigneeCityName
  * @property string ConsigneeCountyCode
  * @property string ConsigneeName
@@ -103,7 +99,7 @@ use WMS\Xtent\Data\Preparation\PreparationType;
  * @property string OrderPicked
  * @property string PlannedDeliveryDate
  * @property string PlannedPreparationDate
- * @property PreparationType PreparationType
+ * @property Preparation\PreparationType PreparationType
  * @property string QuayArea
  * @property string QuayCode
  * @property int RecalculatedLabels
@@ -126,7 +122,7 @@ use WMS\Xtent\Data\Preparation\PreparationType;
  * @property int ConsigneeChoice
  * @property string HelpQuay
  * @property int OrderStatusWithJS
- * @property PreparationDetail[] PreparationDetailsList
+ * @property Preparation\PreparationDetail[] PreparationDetailsList
  */
 class Preparation extends AbstractObjectData
 {

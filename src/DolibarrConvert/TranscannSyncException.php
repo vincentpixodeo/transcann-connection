@@ -41,7 +41,8 @@ class TranscannSyncException extends Exception
      */
     function getLastLog(): ?Log
     {
-        if ($index = array_key_last($this->logs)) {
+        $index = array_key_last($this->logs);
+        if (!is_null($index)) {
             return $this->logs[$index];
         }
         return null;

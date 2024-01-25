@@ -6,10 +6,14 @@
 
 namespace WMS\Xtent\DolibarrConvert\Contracts;
 
+use Exception;
+use Generator;
 use WMS\Xtent\Contracts\AbstractObjectData;
 
 trait CanSaveDataByDatabaseTrait
 {
+    use HasSqlBuilder;
+
 
     /**
      * get Main Table
@@ -34,6 +38,41 @@ trait CanSaveDataByDatabaseTrait
         return (new static())->fetch($id, $field);
     }
 
+    static function get(array $condition = []): Generator
+    {
+        return (new static())->list($condition);
+    }
+
+
+    /**
+     * @param array $condition
+     * @return Generator{static}
+     * @throws Exception
+     */
+    function list(array $condition = []): Generator
+    {
+        $sqlBuilder = $this->buildSelectSql($condition, 'list');
+
+        $db = getDbInstance();
+      
+        $results = $db->query($query = (string)$sqlBuilder);
+
+        if ($db->lasterror()) {
+            throw new Exception($query . PHP_EOL . $db->lasterror());
+        }
+        while ($row = $db->fetch_object($results)) {
+            yield new static((array)$row);
+        }
+    }
+
+    /**
+     * fetch one item by id
+     * @param $id
+     * @param $field
+     * @return $this|null
+     * @throws Exception
+     */
+
     function fetch($id = null, $field = null): ?static
     {
 
@@ -45,19 +84,14 @@ trait CanSaveDataByDatabaseTrait
         if (!$rowId) {
             return null;
         }
-        $where = array_merge($this->defaultCondition(), [$primaryKey => $rowId]);
-        $whereArr = [];
 
-        foreach ($where as $k => $vl) {
-            $whereArr[] = "{$k} = '{$vl}'";
-        }
-        $sqlWhere = implode(' AND ', $whereArr);
+        $sqlBuilder = $this->buildSelectSql([$primaryKey => $rowId], 'fetch');
 
-        $query = 'SELECT * FROM ' . getDbPrefix() . ltrim($this->getMainTable(), getDbPrefix()) . " WHERE {$sqlWhere}";
+        $query = (string)$sqlBuilder;
 
         $result = $db->getRow($query);
         if ($db->lasterror()) {
-            throw new \Exception($query . PHP_EOL . $db->lasterror());
+            throw new Exception($query . PHP_EOL . $db->lasterror());
         }
         if ($result) {
             $data = [];
@@ -70,42 +104,51 @@ trait CanSaveDataByDatabaseTrait
         return null;
     }
 
+    function delete($id = null): bool
+    {
+        is_null($id) && $id = $this->id();
+        if ($id) {
+            $db = getDbInstance();
+            $sqlBuilder = $this->buildSelectSql([], 'delete');
+            $db->query($query = $sqlBuilder->toDeleteSql($this->getPrimaryKey(), $id));
+            if ($db->lasterror()) {
+
+                throw new Exception($query . PHP_EOL . $db->lasterror());
+            }
+            return true;
+        }
+        return false;
+    }
+
     public function save(array $data = []): bool
     {
         $this->addData($data);
         $primaryKey = $this->getPrimaryKey();
         $db = getDbInstance();
 
-        if ($this->{$primaryKey}) {
-            $values = [];
-            foreach ($this->toArray() as $column => $value) {
-                if (in_array($column, array_keys(AbstractObjectData::$casts[static::class] ?? []))) {
-                    $values[] = "{$column} = '{$value}'";
-                }
-
+        $values = [];
+        foreach ($this->toArray() as $column => $value) {
+            if (in_array($column, array_keys(AbstractObjectData::$casts[static::class] ?? []))) {
+                $values[$column] = $value;
             }
 
-            $result = $db->query($query = "UPDATE " . getDbPrefix() . ltrim($this->getMainTable(), getDbPrefix()) . " SET " . implode(',', $values) . " WHERE {$primaryKey} = '{$this->{$primaryKey}}'");
+        }
+
+        if ($id = $this->{$primaryKey}) {
+            $sqlBuilder = $this->buildSelectSql([], 'save');
+            $sqlBuilder->where($this->getPrimaryKey(), $id);
+
+            $result = $db->query($query = $sqlBuilder->toUpdateSql($values));
         } else {
-            $columns = [];
-            $values = [];
-            foreach ($this->toArray() as $column => $value) {
-                if ($column == $primaryKey) continue;
-                if (in_array($column, array_keys(AbstractObjectData::$casts[static::class] ?? []))) {
-                    $columns[] = $column;
-                    $values[] = "'{$value}'";
-                }
-            }
-            $table = getDbPrefix() . ltrim($this->getMainTable(), getDbPrefix());
+            $sqlBuilder = $this->buildSelectSql([], 'insert');
+            $result = $db->query($query = $sqlBuilder->toInsertSql($values));
 
-            $result = $db->query($query = "INSERT INTO " . $table . " (" . implode(',', $columns) . ") VALUES (" . implode(',', $values) . ")");
-
-            $this->addData([$primaryKey => $db->last_insert_id($table)]);
+            $this->addData([$primaryKey => $db->last_insert_id($sqlBuilder->getTable())]);
         }
 
         if ($db->lasterror()) {
 
-            throw new \Exception($query . PHP_EOL . $db->lasterror());
+            throw new Exception($query . PHP_EOL . $db->lasterror());
         }
 
         return empty($db->lasterrno);

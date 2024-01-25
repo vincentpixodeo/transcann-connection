@@ -6,13 +6,10 @@
 
 namespace WMS\Xtent\DolibarrConvert\Pivots;
 
-use WMS\Xtent\Contracts\ObjectDataInterface;
-use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
-
 /**
  * @property string transcann_client_id
  */
-class MappingSaleOrder extends AbstractPivot implements ObjectDataInterface, CanSaveDataInterface
+class MappingSaleOrder extends ModelPivot
 {
     public function getMainTable(): string
     {

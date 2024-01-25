@@ -16,7 +16,7 @@ use WMS\Xtent\Contracts\AbstractObjectData;
  * @property int ClientCodeId
  * @property boolean AutomaticKitGeneration
  * @property boolean Available
- * @property int BatchManagement
+ * @property string BatchManagement
  * @property boolean BulkPackaging
  * @property int CellBrowsing
  * @property boolean CustomsManagement
@@ -43,7 +43,7 @@ use WMS\Xtent\Contracts\AbstractObjectData;
  * @property int REU
  * @property int RFTypeOfAutomaticReading
  * @property int RFTypeOfPreparation
- * @property int RotationCode
+ * @property string RotationCode
  * @property int SerialNumbersAcquisition
  * @property int SerialNumbersManagement
  * @property int SerialNumbersUnit
@@ -172,6 +172,7 @@ use WMS\Xtent\Contracts\AbstractObjectData;
  * @property Client Client
  * @property Currency Currency
  * @property \WMS\Xtent\Data\Address\Family Family
+ * @property string UnitCode
  * @property Unit Unit
  * @property Gencod[] GencodList
  */

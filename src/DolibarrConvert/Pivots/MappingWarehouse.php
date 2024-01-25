@@ -6,10 +6,7 @@
 
 namespace WMS\Xtent\DolibarrConvert\Pivots;
 
-use WMS\Xtent\Contracts\ObjectDataInterface;
-use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
-
-class MappingWarehouse extends AbstractPivot implements ObjectDataInterface, CanSaveDataInterface
+class MappingWarehouse extends ModelPivot
 {
 
     public function getMainTable(): string

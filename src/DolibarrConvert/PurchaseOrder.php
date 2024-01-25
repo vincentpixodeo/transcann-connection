@@ -6,24 +6,33 @@
 
 namespace WMS\Xtent\DolibarrConvert;
 
-use WMS\Xtent\Contracts\AbstractObjectData;
+use DateTime;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Preparation;
 use WMS\Xtent\Data\Reception;
-use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
-use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannTrait;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingPurchaseOrder;
 
 /**
  * dolibarr data 'fourn/class/fournisseur.commande.class.php'
  * $table llx_commande_fournisseur
+ * @property int rowid
+ * @property string ref
+ * @property string ref_ext
+ * @property string ref_supplier
+ * @property int fk_soc
+ * @property int fk_projet
+ * @property DateTime date_valid
+ * @property DateTime date_approve
+ *
+ * property on llx_commande_fournisseur_dispatch table
+ * @property string batch
+ * @property int fk_product
+ * @property int fk_entrepot
+ * @property int qty
+ * @property string comment
  */
-class PurchaseOrder extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface
+class PurchaseOrder extends Model
 {
-    use ConvertTranscanTrait;
-    use DoSyncWithTranscannTrait;
 
     function getMapAttributes(): array
     {

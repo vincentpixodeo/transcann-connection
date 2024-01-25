@@ -6,6 +6,7 @@
 
 namespace WMS\Xtent\Contracts;
 
+use ReflectionException;
 use WMS\Xtent\Helpers\Attribute;
 
 class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
@@ -18,7 +19,7 @@ class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
     protected array $_data;
 
     /**
-     * @throws \Exception
+     * @param array $data
      */
     public function __construct(array $data = [])
     {
@@ -28,7 +29,8 @@ class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
     }
 
     /**
-     * @throws \ReflectionException
+     * @param $class
+     * @return void
      */
     private function _initCasts($class = null): void
     {
@@ -37,7 +39,11 @@ class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
         if (isset(static::$casts[$class]))
             return;
 
-        $reflector = new \ReflectionClass($class);
+        try {
+            $reflector = new \ReflectionClass($class);
+        } catch (ReflectionException $exception) {
+            trigger_error($exception->getMessage(), E_USER_ERROR);
+        }
 
         if ($parent = $reflector->getParentClass()) {
             $parentClassName = $parent->getName();
@@ -122,7 +128,11 @@ class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
     public function toArray(): array
     {
         return array_map(function ($value) {
-            return $value instanceof ObjectDataInterface ? $value->toArray() : $value;
+            return match (true) {
+                $value instanceof ObjectDataInterface => $value->toArray(),
+                $value instanceof \DateTime => $value->format('Y-m-d H:i:s'),
+                true => $value
+            };
         }, $this->_data);
     }
 
@@ -148,6 +158,16 @@ class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
     public function __get(string $name)
     {
         return $this->getData($name);
+    }
+
+    /**
+     * @param string $name
+     * @param $value
+     * @return void
+     */
+    public function __set(string $name, $value): void
+    {
+        $this->addData([$name => $value]);
     }
 
     public function offsetExists(mixed $offset): bool

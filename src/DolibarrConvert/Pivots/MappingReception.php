@@ -6,14 +6,11 @@
 
 namespace WMS\Xtent\DolibarrConvert\Pivots;
 
-/**
- * @property string transcann_client_id
- */
-class MappingCustomer extends ModelPivot
+class MappingReception extends ModelPivot
 {
     public function getMainTable(): string
     {
-        return 'transcannconnection_mapping_customers';
+        return 'transcannconnection_mapping_receptions';
     }
 
     public function getPrimaryKey(): string

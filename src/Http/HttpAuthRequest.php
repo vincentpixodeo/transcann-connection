@@ -33,7 +33,7 @@ class HttpAuthRequest extends AbstractRequestAction implements HttpRequestInterf
         if (empty($token)) {
             throw new \Exception('The token is empty');
         }
-        $this->_client->setToken($this->authentication->getToken());
+        $this->_client->setToken($token);
         return $this->_client;
     }
 

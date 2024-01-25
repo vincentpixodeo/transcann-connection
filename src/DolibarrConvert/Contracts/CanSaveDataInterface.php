@@ -6,6 +6,8 @@
 
 namespace WMS\Xtent\DolibarrConvert\Contracts;
 
+use Generator;
+
 interface CanSaveDataInterface
 {
     /**
@@ -21,6 +23,13 @@ interface CanSaveDataInterface
      * @return $this|null
      */
     function fetch($id = null, $field = null): ?static;
+
+    /**
+     * get list
+     * @param array $condition
+     * @return Generator
+     */
+    function list(array $condition = []): Generator;
 
     /**
      * get Primary Key

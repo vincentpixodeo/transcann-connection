@@ -6,7 +6,7 @@
 
 namespace WMS\Xtent\DolibarrConvert\Contracts;
 
-use WMS\Xtent\Contracts\ObjectDataInterface;
+use WMS\Xtent\DolibarrConvert\Pivots\ModelPivot;
 
 
 trait DoSyncWithTranscannTrait
@@ -18,13 +18,18 @@ trait DoSyncWithTranscannTrait
 
     abstract function getMappingClass(): string;
 
-    function getMappingInstance(array $data = []): ObjectDataInterface&CanSaveDataInterface
+    function getMappingInstance(array $data = []): ModelPivot
     {
         $primaryKey = $this->getPrimaryKey();
+
         if (is_null($this->_mappingInstance)) {
+            $transcanInstance = $this->getTranscanInstance();
+            if (is_object($transcanInstance)) {
+                $transcanInstance = get_class($transcanInstance);
+            }
             $this->_mappingInstance = new ($this->getMappingClass())([
                 'fk_object_id' => $this->{$primaryKey}
-            ]);
+            ], $transcanInstance);
 
             if ($this->{$primaryKey} && $exist = $this->_mappingInstance->fetch($this->{$primaryKey}, 'fk_object_id')) {
 

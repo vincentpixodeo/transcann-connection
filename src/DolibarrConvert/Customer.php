@@ -6,14 +6,9 @@
 
 namespace WMS\Xtent\DolibarrConvert;
 
-use WMS\Xtent\Contracts\AbstractObjectData;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Client;
 use WMS\Xtent\Data\Enums\WarehousePartyCategory;
-use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
-use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannTrait;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingCustomer;
 
 /**
@@ -24,10 +19,8 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingCustomer;
  * @property string price
  * $table llx_societe
  */
-class Customer extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface
+class Customer extends Model
 {
-    use ConvertTranscanTrait;
-    use DoSyncWithTranscannTrait;
 
     function getMapAttributes(): array
     {

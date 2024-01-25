@@ -58,7 +58,6 @@ function executeAction(Action $action): void
         'retries' => $action->retries + 1,
         'status' => Action::STATUS_PROCESSING
     ]);
-
     $data = json_decode($action->payload, true);
     $result = new ActionResult(['action_id' => $action->id()]);
     try {
@@ -66,7 +65,7 @@ function executeAction(Action $action): void
             throw new Exception('Class not exist :' . $instance);
         }
         $result->save(['status' => ActionResult::STATUS_START]);
-        (new $instance($data))->{$method}();
+        (new $instance($data ?? []))->{$method}();
         $result->save(['status' => ActionResult::STATUS_SUCCESS]);
         $action->save([
             'status' => Action::STATUS_PROCESSED
@@ -77,12 +76,13 @@ function executeAction(Action $action): void
         $error = $exception->getMessage();
 
         if ($log = $exception->getLastLog()) {
-            $payload = $log->getBody();
+            $payload = $exception->getLogs();
             $response = $log->getResponse();
             $error = $log->getUrl();
         }
+
         $result->save([
-            'payload' => $db->escape(json_encode($payload)),
+            'payload' => $db->escape(serialize($payload)),
             'response' => $db->escape(json_encode($response)),
             'error' => $db->escape($error),
             'status' => ActionResult::STATUS_FAIL

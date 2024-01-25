@@ -10,7 +10,7 @@ use WMS\Xtent\Data\Collection;
 
 final class Attribute
 {
-    const SYSTEM_INSTANCES = ['int', 'string', 'float', 'boolean', 'bool', 'array'];
+    const SYSTEM_INSTANCES = ['int', 'string', 'float', 'boolean', 'bool', 'array', 'DateTime'];
 
     public function __construct(
         protected string $property,
@@ -54,6 +54,15 @@ final class Attribute
 
             case 'float':
                 return (float)$data;
+            case 'DateTime':
+            case '\DateTime':
+            {
+                try {
+                    return new \DateTime($data);
+                } catch (\Exception $exception) {
+                    return $data;
+                }
+            }
 
             default:
                 return $data;

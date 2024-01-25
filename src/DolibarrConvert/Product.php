@@ -6,14 +6,10 @@
 
 namespace WMS\Xtent\DolibarrConvert;
 
-use WMS\Xtent\Contracts\AbstractObjectData;
+use WMS\Xtent\Apis\IntegrationWebServices\Items;
+use WMS\Xtent\Apis\QueryWebServices\CheckFlowIntegrationStatus;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Item;
-use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
-use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanInteface;
-use WMS\Xtent\DolibarrConvert\Contracts\ConvertTranscanTrait;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannInterface;
-use WMS\Xtent\DolibarrConvert\Contracts\DoSyncWithTranscannTrait;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingProduct;
 
 /**
@@ -25,10 +21,8 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingProduct;
  * @property string barcode
  * $table llx_product
  */
-class Product extends AbstractObjectData implements ConvertTranscanInteface, ObjectDataInterface, DoSyncWithTranscannInterface, CanSaveDataInterface
+class Product extends Model
 {
-    use ConvertTranscanTrait;
-    use DoSyncWithTranscannTrait;
 
     public ?ProductExtraField $extraField = null;
 
@@ -90,11 +84,11 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
             "OutboundStatus" => null,
 //            "SupplierCodeId" => 111,
 //            "FamilyCode" => "AAA",
-//            "EdiItemGencode" => [
-//                [
-//                    "ItemGencod" => $this->barcode
-//                ]
-//            ]
+            "EdiItemGencode" => [
+                [
+                    "ItemGencod" => $this->barcode
+                ]
+            ]
         ];
     }
 
@@ -108,6 +102,9 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
         return true;
     }
 
+    /**
+     * @throws TranscannSyncException
+     */
     function pushDataToTranscann(array $data = []): bool
     {
         $this->fetch();
@@ -118,36 +115,32 @@ class Product extends AbstractObjectData implements ConvertTranscanInteface, Obj
         /* Action push data to Transcann*/
         if ($mapping) {
             $dataSend = $this->convertToTranscan()->toArray();
-            $api = new \WMS\Xtent\Apis\Item();
-            $transcannId = $mapping->transcann_id ?? null;
+
+
             $dataSend += $data;
-            if ($transcannId) {
-                if ($api->put($transcannId, $dataSend)) {
-                    $transcannInstance = new Item($api->getResponse()->getData());
-                    $mapping->save([
-                        'transcann_id' => $transcannInstance->Id,
-                        'transcann_client_id' => $transcannInstance->ClientCodeId,
-                        'transcan_meta_id' => $transcannInstance->_MetaId_,
-                        'transcan_payload' => json_encode($transcannInstance->toArray())
-                    ]);
+            $api = new Items();
+            if ($api->execute(['listItems' => [$dataSend]])) {
+                $result = $api->getResponse()->getData();
+                $transcannId = $result['result']['ResultOfItemsIntegration'][0]['XtentItemId'] ?? null;
+                $transcannMetaId = $result['result']['ResultOfItemsIntegration'][0]['ItemCode'] ?? null;
+                $folowId = $result['result']['FlowsId'][0]['FlowID'] ?? null;
+                $apiFlow = new CheckFlowIntegrationStatus();
+                if ($apiFlow->execute($folowId)) {
+                    $checkResult = $apiFlow->getResponse()->getData();
+                    if ("OK" == ($checkResult['result']['FlowStatus'] ?? null)) {
+                        $mapping->transcan_id = $transcannId;
+                        $mapping->transcan_meta_id = $transcannMetaId;
+                        $mapping->save();
+                    } else {
+                        throw new TranscannSyncException(new \Exception('Result Fail'), $apiFlow->getClient()->getLogs());
+                    }
                 } else {
-                    $errors = $api->getErrors();
-                    throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
+                    $errors = $apiFlow->getErrors();
+                    throw new TranscannSyncException(array_pop($errors), $apiFlow->getClient()->getLogs());
                 }
             } else {
-                if ($api->create($dataSend)) {
-                    $transcannInstance = new Item($api->getResponse()->getData());
-                    $mapping->save([
-                        'transcann_id' => $transcannInstance->Id,
-                        'transcann_client_id' => $transcannInstance->ClientCodeId,
-                        'transcan_meta_id' => $transcannInstance->_MetaId_,
-                        'transcan_payload' => json_encode($transcannInstance->toArray())
-                    ]);
-                } else {
-                    $errors = $api->getErrors();
-                    dump($errors);
-                    throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
-                }
+                $errors = $api->getErrors();
+                throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
             }
         }
         return false;
