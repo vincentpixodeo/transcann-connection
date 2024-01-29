@@ -38,6 +38,11 @@ trait CanSaveDataByDatabaseTrait
         return (new static())->fetch($id, $field);
     }
 
+    /**
+     * @param array $condition
+     * @return Generator{static}
+     * @throws Exception
+     */
     static function get(array $condition = []): Generator
     {
         return (new static())->list($condition);
@@ -54,7 +59,7 @@ trait CanSaveDataByDatabaseTrait
         $sqlBuilder = $this->buildSelectSql($condition, 'list');
 
         $db = getDbInstance();
-      
+
         $results = $db->query($query = (string)$sqlBuilder);
 
         if ($db->lasterror()) {

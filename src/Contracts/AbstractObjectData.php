@@ -6,10 +6,12 @@
 
 namespace WMS\Xtent\Contracts;
 
+use ArrayAccess;
+use JsonSerializable;
 use ReflectionException;
 use WMS\Xtent\Helpers\Attribute;
 
-class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
+class AbstractObjectData implements ObjectDataInterface, ArrayAccess, JsonSerializable
 {
     /**
      * @var Attribute[]
@@ -54,10 +56,11 @@ class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
         }
 
         $docs = $reflector->getDocComment();
-        $pattern = "#@property\s*(([\w\\\]+)(\[])*)\s+([\w_]+)\s+([\w\s]*)#";
+        $pattern = "#@property\s*(([\w\\\]+)(\[])*)\s+\\$*([\w_]+)\s+([\w\s]*)#";
 
         if ($docs) {
             preg_match_all($pattern, $docs, $matches, PREG_SET_ORDER);
+
             foreach ($matches as $attribute) {
                 list($full, $propertyInstance, $instance, $isArray, $property, $description) = $attribute;
 
@@ -121,6 +124,20 @@ class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
         return $this->_data[$key] ?? $default;
     }
 
+    public function __serialize(): array
+    {
+        return $this->toArray();
+    }
+
+    public function __unserialize(array $data): void
+    {
+        $this->setData($data);
+    }
+
+    public function __toString(): string
+    {
+        return json_encode($this->toArray());
+    }
 
     /**
      * @return array
@@ -188,5 +205,10 @@ class AbstractObjectData implements ObjectDataInterface, \ArrayAccess
     public function offsetUnset(mixed $offset): void
     {
         unset($this->_data[$offset]);
+    }
+
+    public function jsonSerialize(): mixed
+    {
+        return $this->toArray();
     }
 }

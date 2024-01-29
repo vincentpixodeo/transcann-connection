@@ -9,13 +9,13 @@ use WMS\Xtent\DolibarrConvert\TranscannSyncException;
  * Email: vincent@pixodeo.net
  */
 
-function getDbInstance(): DoliDB
+function getDbInstance(): \WMS\Xtent\Database\DoliDB
 {
     static $db;
     if (empty($db)) {
         global $conf;
         $dbConf = $conf->db;
-        $db = new DoliDBMysqli($dbConf->type, $dbConf->host, $dbConf->user, $dbConf->pass ?? null, $dbConf->name ?? '', $dbConf->port ?? 3306);
+        $db = new \WMS\Xtent\Database\DoliDBMysqli($dbConf->type, $dbConf->host, $dbConf->user, $dbConf->pass ?? null, $dbConf->name ?? '', $dbConf->port ?? 3306);
     }
     return $db;
 }

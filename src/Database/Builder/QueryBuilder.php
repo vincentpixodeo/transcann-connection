@@ -72,7 +72,15 @@ class QueryBuilder
     {
 
         foreach ($columns as $temp) {
+
             list($field, $alias) = $this->detectAlias($temp);
+            
+            /*detect select by SQL function*/
+            if (preg_match('(\w*\s?\(.*\))', $field)) {
+                $this->columns[$temp] = trim($field) . ($alias ? " as {$alias}" : "");
+                continue;
+            }
+
             list($column, $table) = $this->detectColumn($field);
 
             if ($column) {
@@ -97,7 +105,7 @@ class QueryBuilder
      */
     protected function detectAlias(string $table): array
     {
-        $temp = explode('as', $table);
+        $temp = explode(' as ', $table);
         $table = $temp[0];
         $alias = $temp[1] ?? null;
         is_null($alias) || $alias = trim($alias);

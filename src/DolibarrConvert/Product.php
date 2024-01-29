@@ -10,6 +10,8 @@ use WMS\Xtent\Apis\IntegrationWebServices\Items;
 use WMS\Xtent\Apis\QueryWebServices\CheckFlowIntegrationStatus;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Item;
+use WMS\Xtent\Database\Builder\QueryBuilder;
+use WMS\Xtent\Database\Builder\QueryJoinType;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingProduct;
 
 /**
@@ -29,9 +31,20 @@ class Product extends Model
     function getMapAttributes(): array
     {
         return [
-            'label' => 'Description',
-            'ref' => 'ItemCode',
-            'price' => 'Value',
+            'llx_product_ref' => 'ItemCode',
+            'llx_product_label' => 'Description',
+            'llx_product_fournisseur_price_ref_fourn' => 'ExternalReference',
+            'llx_product_tobatch' => 'BatchManagement',
+            'llx_c_units_code' => 'UnitCode',
+            'llx_c_units_label' => 'UnitLabel',
+            'llx_product_extrafields_unitparcarton' => 'Outer',
+            'llx_product_extrafields.cartonsparplan' => 'ParcelsPerLayer',
+            'llx_product_extrafields.planpalette' => 'LayersPerPallet',
+            'llx_product.weight' => 'SUGrossWeight',
+            'llx_product.net_measure' => 'SUNetWeight',
+            'llx_categorie_ref_ext' => 'FamilyCode',
+            'llx_societe_nom' => 'CustomizedField1',
+//            'llx_product_barcode' => 'ItemGencod',
         ];
     }
 
@@ -52,18 +65,18 @@ class Product extends Model
 
     function getAppendAttributes(): array
     {
-        $extraField = $this->fetchExtraFields();
+//        $extraField = $this->fetchExtraFields();
         return [
             'ClientCodeId' => 2000,
             "ExternalReference" => null,
-            "BatchManagement" => "L",
+//            "BatchManagement" => "L",
             "RotationCode" => "B",
 //            "UnitCode" => $extraField?->contenance,
             "Comments" => null,
             "Inner" => 1,
-            "Outer" => $extraField?->unitecarton,
-            "ParcelsPerLayer" => 40,
-            "LayersPerPallet" => 6,
+//            "Outer" => $extraField?->unitecarton,
+//            "ParcelsPerLayer" => $extraField?->cartonplan,
+//            "LayersPerPallet" => $extraField?->planpalette,
             "SUWidth" => 20.0,
             "SUDepth" => 40.0,
             "SUHeight" => 5.0,
@@ -75,8 +88,8 @@ class Product extends Model
             "PalletOccupationHeight" => 120,
             "ParcelGrossWeight" => 2.6,
             "ParcelNetWeight" => 2.6,
-            "SUGrossWeight" => $extraField?->poidsbrut,
-            "SUNetWeight" => $extraField?->poidsnet,
+//            "SUGrossWeight" => $extraField?->poidsbrut,
+//            "SUNetWeight" => $extraField?->poidsnet,
             "CurrencyId" => "EUR",
             "PackagingCode" => "EUR",
             "InboundStatus" => null,
@@ -86,7 +99,7 @@ class Product extends Model
 //            "FamilyCode" => "AAA",
             "EdiItemGencode" => [
                 [
-                    "ItemGencod" => $this->barcode
+                    "ItemGencod" => $this->llx_product_barcode
                 ]
             ]
         ];
@@ -107,17 +120,17 @@ class Product extends Model
      */
     function pushDataToTranscann(array $data = []): bool
     {
-        $this->fetch();
 
         /** @var MappingProduct $mapping */
         $mapping = $this->getMappingInstance()->fetch();
 
         /* Action push data to Transcann*/
         if ($mapping) {
+
             $dataSend = $this->convertToTranscan()->toArray();
 
-
-            $dataSend += $data;
+            $dataSend = array_merge($dataSend, $data);
+       
             $api = new Items();
             if ($api->execute(['listItems' => [$dataSend]])) {
                 $result = $api->getResponse()->getData();
@@ -149,6 +162,42 @@ class Product extends Model
     public function getPrimaryKey(): string
     {
         return 'rowid';
+    }
+
+    protected static function boot(): void
+    {
+        static::sqlEvent('init', function (QueryBuilder $queryBuilder) {
+            $queryBuilder->select([
+                'llx_product.rowid as rowid',
+                'llx_product.ref as llx_product_ref',
+                'llx_product.label as llx_product_label',
+                'llx_product_fournisseur_price.ref_fourn as llx_product_fournisseur_price_ref_fourn',
+                'llx_product.tobatch as llx_product_tobatch',
+                'llx_c_units.code as llx_c_units_code',
+                'llx_c_units.label as llx_c_units_label',
+                'llx_product_extrafields.unitparcarton as llx_product_extrafields_unitparcarton',
+                'llx_product_extrafields.cartonsparplan as llx_product_extrafields_cartonsparplan',
+                'llx_product_extrafields.planpalette as llx_product_extrafields_planpalette',
+                'llx_product.weight as llx_product_weight',
+                'llx_product.net_measure as llx_product_net_measure',
+                'LEFT(llx_categorie.ref_ext, 2) as llx_categorie_ref_ext',
+                'llx_societe.nom as llx_societe_nom',
+                'llx_product.barcode as llx_product_barcode',
+            ]);
+            $queryBuilder->join('llx_product_fournisseur_price', 'llx_product.rowid', 'llx_product_fournisseur_price.fk_product', QueryJoinType::LeftJoin)
+                ->join('llx_c_units', 'llx_product.fk_unit', 'llx_c_units.rowid', QueryJoinType::LeftJoin)
+                ->join('llx_product_extrafields', 'llx_product.rowid', 'llx_product_extrafields.fk_object', QueryJoinType::LeftJoin)
+                ->join('llx_categorie_product', 'llx_product.rowid', 'llx_categorie_product.fk_product', QueryJoinType::LeftJoin)
+                ->join('llx_categorie', 'llx_categorie_product.fk_categorie', 'llx_categorie.rowid', QueryJoinType::LeftJoin)
+                ->join('llx_societe', 'llx_product_fournisseur_price.fk_soc', 'llx_societe.rowid', QueryJoinType::LeftJoin)/*->where(['llx_product.tosell' => 1, 'llx_product.tobuy'])*/
+            ;
+
+            $queryBuilder->where([
+                ['llx_product.tosell', 1],
+                ['llx_product.tobuy', 1]
+            ]);
+
+        });
     }
 
 }
