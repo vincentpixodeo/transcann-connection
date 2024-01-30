@@ -273,7 +273,12 @@ class QueryBuilder
             if (is_null($value)) {
                 $setArr[] = "`$column` = NULL";
             } else {
-                $setArr[] = "`$column` = '{$value}'";
+                if (is_numeric($value)) {
+                    $setArr[] = "`$column` = '{$value}'";
+                } else {
+                    $setArr[] = "`$column` = '".mysqli_real_escape_string(getDbInstance()->db, $value)."'";
+                }
+                
             }
         }
         $setSql = implode(', ', $setArr);
@@ -286,7 +291,12 @@ class QueryBuilder
         $keys = implode('`, `', array_keys($fields));
         $values = [];
         foreach ($fields as $field => $value) {
-            $values[] = "'$value'";
+            if (is_numeric($value)) {
+                $values[] = "'$value'";
+            } else {
+                $values[] = "'".mysqli_real_escape_string(getDbInstance()->db, $value)."'";
+            }
+            
         }
         $valueSql = implode(', ', $values);
 

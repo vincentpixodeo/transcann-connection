@@ -34,14 +34,14 @@ class Product extends Model
             'llx_product_ref' => 'ItemCode',
             'llx_product_label' => 'Description',
             'llx_product_fournisseur_price_ref_fourn' => 'ExternalReference',
-            'llx_product_tobatch' => 'BatchManagement',
+            // 'llx_product_tobatch' => 'BatchManagement',
             'llx_c_units_code' => 'UnitCode',
-            'llx_c_units_label' => 'UnitLabel',
+            // 'llx_c_units_label' => 'UnitLabel',
             'llx_product_extrafields_unitparcarton' => 'Outer',
-            'llx_product_extrafields.cartonsparplan' => 'ParcelsPerLayer',
-            'llx_product_extrafields.planpalette' => 'LayersPerPallet',
-            'llx_product.weight' => 'SUGrossWeight',
-            'llx_product.net_measure' => 'SUNetWeight',
+            'llx_product_extrafields_cartonsparplan' => 'ParcelsPerLayer',
+            'llx_product_extrafields_planpalette' => 'LayersPerPallet',
+            'llx_product_weight' => 'SUGrossWeight',
+            'llx_product_net_measure' => 'SUNetWeight',
             'llx_categorie_ref_ext' => 'FamilyCode',
             'llx_societe_nom' => 'CustomizedField1',
 //            'llx_product_barcode' => 'ItemGencod',
@@ -99,7 +99,7 @@ class Product extends Model
 //            "FamilyCode" => "AAA",
             "EdiItemGencode" => [
                 [
-                    "ItemGencod" => $this->llx_product_barcode
+                    "ItemGencod" => $this->llx_product_barcode ?? ''
                 ]
             ]
         ];
@@ -130,7 +130,7 @@ class Product extends Model
             $dataSend = $this->convertToTranscan()->toArray();
 
             $dataSend = array_merge($dataSend, $data);
-       
+    
             $api = new Items();
             if ($api->execute(['listItems' => [$dataSend]])) {
                 $result = $api->getResponse()->getData();
@@ -138,6 +138,7 @@ class Product extends Model
                 $transcannMetaId = $result['result']['ResultOfItemsIntegration'][0]['ItemCode'] ?? null;
                 $folowId = $result['result']['FlowsId'][0]['FlowID'] ?? null;
                 $apiFlow = new CheckFlowIntegrationStatus();
+                sleep(5);
                 if ($apiFlow->execute($folowId)) {
                     $checkResult = $apiFlow->getResponse()->getData();
                     if ("OK" == ($checkResult['result']['FlowStatus'] ?? null)) {
@@ -197,6 +198,7 @@ class Product extends Model
                 ['llx_product.tobuy', 1]
             ]);
 
+$queryBuilder->limit(100);
         });
     }
 
