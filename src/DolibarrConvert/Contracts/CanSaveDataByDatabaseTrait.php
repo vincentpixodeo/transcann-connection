@@ -40,12 +40,14 @@ trait CanSaveDataByDatabaseTrait
 
     /**
      * @param array $condition
+     * @param int|null $limit
+     * @param int|null $offset
      * @return Generator{static}
      * @throws Exception
      */
-    static function get(array $condition = []): Generator
+    static function get(array $condition = [], int $limit = null, int $offset = null): Generator
     {
-        return (new static())->list($condition);
+        return (new static())->list($condition, $limit, $offset);
     }
 
 
@@ -54,10 +56,12 @@ trait CanSaveDataByDatabaseTrait
      * @return Generator{static}
      * @throws Exception
      */
-    function list(array $condition = []): Generator
+    function list(array $condition = [], int $limit = null, int $offset = null): Generator
     {
         $sqlBuilder = $this->buildSelectSql($condition, 'list');
-
+        if ($limit) {
+            $sqlBuilder->limit($limit, $offset);
+        }
         $db = getDbInstance();
 
         $results = $db->query($query = (string)$sqlBuilder);

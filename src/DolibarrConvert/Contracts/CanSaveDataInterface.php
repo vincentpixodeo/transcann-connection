@@ -29,7 +29,7 @@ interface CanSaveDataInterface
      * @param array $condition
      * @return Generator
      */
-    function list(array $condition = []): Generator;
+    function list(array $condition = [], int $limit = null, int $offset = null): Generator;
 
     /**
      * get Primary Key

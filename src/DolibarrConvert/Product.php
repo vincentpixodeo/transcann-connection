@@ -69,7 +69,7 @@ class Product extends Model
         return [
             'ClientCodeId' => 2000,
             "ExternalReference" => null,
-//            "BatchManagement" => "L",
+            "BatchManagement" => "L",
             "RotationCode" => "B",
 //            "UnitCode" => $extraField?->contenance,
             "Comments" => null,
@@ -130,7 +130,7 @@ class Product extends Model
             $dataSend = $this->convertToTranscan()->toArray();
 
             $dataSend = array_merge($dataSend, $data);
-    
+
             $api = new Items();
             if ($api->execute(['listItems' => [$dataSend]])) {
                 $result = $api->getResponse()->getData();
@@ -197,8 +197,6 @@ class Product extends Model
                 ['llx_product.tosell', 1],
                 ['llx_product.tobuy', 1]
             ]);
-
-$queryBuilder->limit(100);
         });
     }
 

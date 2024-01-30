@@ -40,7 +40,7 @@ function addAction(array|string $name, array $data): int|string|null
     }
 
     $instance = new Action([
-        'action' => addslashes($name),
+        'action' => $name,
         'payload' => json_encode($data)
     ]);
 
@@ -54,7 +54,7 @@ function executeAction(Action $action): void
     $db = getDbInstance();
     list($instance, $method) = explode('@', $action->action);
     $action->save([
-        'action' => addslashes($action->action),
+        'action' => $action->action,
         'retries' => $action->retries + 1,
         'status' => Action::STATUS_PROCESSING
     ]);
