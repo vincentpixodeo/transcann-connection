@@ -20,16 +20,17 @@ interface CanSaveDataInterface
     /**
      * @param $id
      * @param $field
+     * @param callable|null $queryBuilderCallback
      * @return $this|null
      */
-    function fetch($id = null, $field = null): ?static;
+    function fetch($id = null, $field = null, callable $queryBuilderCallback = null): ?static;
 
     /**
-     * get list
      * @param array $condition
+     * @param callable|null $queryBuilderCallback
      * @return Generator
      */
-    function list(array $condition = [], int $limit = null, int $offset = null): Generator;
+    function list(array $condition = [], callable $queryBuilderCallback = null): Generator;
 
     /**
      * get Primary Key

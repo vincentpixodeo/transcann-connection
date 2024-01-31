@@ -41,10 +41,10 @@ class Response
     protected function _processData(bool $jsonException = true): mixed
     {
         if (!$this->_processed) {
-            $this->_data = json_decode($this->_response, true);
+            $this->_data = json_decode($this->_response, true, 512, JSON_INVALID_UTF8_IGNORE);
 
             if (json_last_error() && $jsonException) {
-                throw new JsonException('json_decode: '. json_last_error_msg());
+                throw new JsonException('json_decode: ' . json_last_error_msg());
             }
         }
 

@@ -7,7 +7,7 @@
 namespace WMS\Xtent\Data\Preparation;
 
 use WMS\Xtent\Contracts\AbstractObjectData;
-use WMS\Xtent\Data\Gencod;
+
 
 /**
  * @property string _MetaId_
@@ -17,7 +17,7 @@ use WMS\Xtent\Data\Gencod;
  * @property string ExternalReference
  * @property int Id
  * @property string ItemCode
- * @property Gencod[] ListOfGencod
+ * @property \WMS\Xtent\Data\Gencod[] ListOfGencod
  */
 class SelectedItem extends AbstractObjectData
 {

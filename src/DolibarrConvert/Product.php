@@ -137,17 +137,23 @@ class Product extends Model
                 $transcannId = $result['result']['ResultOfItemsIntegration'][0]['XtentItemId'] ?? null;
                 $transcannMetaId = $result['result']['ResultOfItemsIntegration'][0]['ItemCode'] ?? null;
                 $folowId = $result['result']['FlowsId'][0]['FlowID'] ?? null;
+                $mapping->transcan_id = $transcannId;
+                $mapping->transcan_meta_id = $transcannMetaId;
+                $mapping->transcan_payload = json_encode($result['result']['FlowsId']);
+                $mapping->save();
                 $apiFlow = new CheckFlowIntegrationStatus();
-                sleep(5);
                 if ($apiFlow->execute($folowId)) {
+
                     $checkResult = $apiFlow->getResponse()->getData();
-                    if ("OK" == ($checkResult['result']['FlowStatus'] ?? null)) {
-                        $mapping->transcan_id = $transcannId;
-                        $mapping->transcan_meta_id = $transcannMetaId;
-                        $mapping->save();
-                    } else {
-                        throw new TranscannSyncException(new \Exception('Result Fail'), $apiFlow->getClient()->getLogs());
-                    }
+                    $mapping->transcan_payload = json_encode($checkResult);
+                    $mapping->save();
+//                    if ("OK" == ($checkResult['result']['FlowStatus'] ?? null)) {
+//                        $mapping->transcan_id = $transcannId;
+//                        $mapping->transcan_meta_id = $transcannMetaId;
+//                        $mapping->save();
+//                    } else {
+//                        throw new TranscannSyncException(new \Exception('Result Fail'), $apiFlow->getClient()->getLogs());
+//                    }
                 } else {
                     $errors = $apiFlow->getErrors();
                     throw new TranscannSyncException(array_pop($errors), $apiFlow->getClient()->getLogs());

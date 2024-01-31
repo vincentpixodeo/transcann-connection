@@ -33,9 +33,16 @@ trait CanSaveDataByDatabaseTrait
         return [];
     }
 
-    static function load($id = null, $field = null): ?static
+    /**
+     * @param $id
+     * @param $field
+     * @param callable|null $queryBuilderCallback
+     * @return static|null
+     * @throws Exception
+     */
+    static function load($id = null, $field = null, callable $queryBuilderCallback = null): ?static
     {
-        return (new static())->fetch($id, $field);
+        return (new static())->fetch($id, $field, $queryBuilderCallback);
     }
 
     /**
@@ -45,23 +52,25 @@ trait CanSaveDataByDatabaseTrait
      * @return Generator{static}
      * @throws Exception
      */
-    static function get(array $condition = [], int $limit = null, int $offset = null): Generator
+    static function get(array $condition = [], callable $queryBuilderCallback = null): Generator
     {
-        return (new static())->list($condition, $limit, $offset);
+        return (new static())->list($condition, $queryBuilderCallback);
     }
 
 
     /**
      * @param array $condition
-     * @return Generator{static}
+     * @param callable|null $queryBuilderCallback
+     * @return Generator
      * @throws Exception
      */
-    function list(array $condition = [], int $limit = null, int $offset = null): Generator
+    function list(array $condition = [], callable $queryBuilderCallback = null): Generator
     {
         $sqlBuilder = $this->buildSelectSql($condition, 'list');
-        if ($limit) {
-            $sqlBuilder->limit($limit, $offset);
+        if ($queryBuilderCallback) {
+            $queryBuilderCallback($sqlBuilder);
         }
+
         $db = getDbInstance();
 
         $results = $db->query($query = (string)$sqlBuilder);
@@ -75,14 +84,14 @@ trait CanSaveDataByDatabaseTrait
     }
 
     /**
-     * fetch one item by id
      * @param $id
      * @param $field
+     * @param callable|null $queryBuilderCallback
      * @return $this|null
      * @throws Exception
      */
 
-    function fetch($id = null, $field = null): ?static
+    function fetch($id = null, $field = null, callable $queryBuilderCallback = null): ?static
     {
 
         $primaryKey = $field ?? $this->getPrimaryKey();
@@ -96,12 +105,18 @@ trait CanSaveDataByDatabaseTrait
 
         $sqlBuilder = $this->buildSelectSql([$primaryKey => $rowId], 'fetch');
 
+        if ($queryBuilderCallback) {
+            $queryBuilderCallback($sqlBuilder);
+        }
+
         $query = (string)$sqlBuilder;
 
         $result = $db->getRow($query);
+
         if ($db->lasterror()) {
             throw new Exception($query . PHP_EOL . $db->lasterror());
         }
+
         if ($result) {
             $data = [];
             foreach ((array)$result as $key => $value) {
@@ -113,6 +128,11 @@ trait CanSaveDataByDatabaseTrait
         return null;
     }
 
+    /**
+     * @param $id
+     * @return bool
+     * @throws Exception
+     */
     function delete($id = null): bool
     {
         is_null($id) && $id = $this->id();
@@ -129,6 +149,11 @@ trait CanSaveDataByDatabaseTrait
         return false;
     }
 
+    /**
+     * @param array $data
+     * @return bool
+     * @throws Exception
+     */
     public function save(array $data = []): bool
     {
         $this->addData($data);
