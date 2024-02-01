@@ -16,6 +16,7 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingSaleOrder;
 
 /**
  * @property \DateTime $date_livraison
+ * @property int $fk_statut
  * dolibarr data 'fourn/class/fournisseur.commande.class.php'
  * $table llx_commande
  */
@@ -101,20 +102,52 @@ class SaleOrder extends Model
         return MappingSaleOrder::class;
     }
 
+    protected function mappingSaleOrderStatusFromTranscanStatus(int $value): ?int
+    {
+        return match ($value) {
+            0, 1 => 0,
+            2 => 1,
+            3, 4 => 2,
+            5 => 3,
+            6 => -1,
+            default => null
+        };
+    }
+
     function updateDataFromTranscann(array $data = []): bool
     {
         $api = new GetPreparations();
-        $mapping = $this->getMappingInstance();
-        if ($mapping->transcan_id && $api->execute(['filters' => "Id={$mapping->transcan_id}"]) && $data = ($api->getResponse()->getData()['result'][0] ?? null)) {
-            /** @var Preparation $preparation */
-            $preparation = $this->getTranscanInstance();
-            $preparation->setData($data);
-            dd($preparation);
+        $dataFilter = [];
+        if ($this->id() && $mapping = $this->getMappingInstance()) {
+            if ($mapping->transcan_id) {
+                $dataFilter = ['filters' => "Id={$mapping->transcan_id}"];
+            }
         }
-        return true;
+        if ($api->execute($dataFilter) && $results = ($api->getResponse()->getData()['result'] ?? [])) {
+            foreach ($results as $item) {
+                /** @var Preparation $preparation */
+                $preparation = $this->getTranscanInstance();
+                $preparation->setData($item);
+                /** @var MappingSaleOrder $mapping */
+
+                if ($mapping = MappingSaleOrder::load($preparation->Id, 'transcan_id')) {
+                    $updateStatus = $this->mappingSaleOrderStatusFromTranscanStatus($preparation->OrderStatus);
+                    if (!is_null($updateStatus)) {
+                        $order = static::load($mapping->fk_object_id);
+                        $order->status = $preparation->OrderStatus;
+                        $order->save();
+                    }
+                    $mapping->save(['transcan_payload' => json_encode($item)]);
+                }
+            }
+            return true;
+        } else {
+            $errors = $api->getErrors();
+            throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
+        }
     }
 
-    function lines(): \Generator
+    protected function lines(): \Generator
     {
         return SaleOrderLine::get(['fk_commande' => $this->id()], function (QueryBuilder $builder) {
             $builder->join('llx_product', 'fk_product', 'rowid')
@@ -147,6 +180,9 @@ class SaleOrder extends Model
                 $mapping->transcan_payload = json_encode($result['result']['FlowsId']);
                 $mapping->save();
                 return true;
+            } else {
+                $errors = $api->getErrors();
+                throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
             }
         }
         return false;

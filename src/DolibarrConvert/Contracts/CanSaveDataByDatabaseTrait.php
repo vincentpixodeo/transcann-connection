@@ -14,6 +14,8 @@ trait CanSaveDataByDatabaseTrait
 {
     use HasSqlBuilder;
 
+    protected array $_original = [];
+
 
     /**
      * get Main Table
@@ -122,7 +124,8 @@ trait CanSaveDataByDatabaseTrait
             foreach ((array)$result as $key => $value) {
                 if (!is_null($value)) $data[$key] = $value;
             }
-            return $this->addData(($data));
+            $this->_original = $data;
+            return $this->addData($data);
         }
 
         return null;
@@ -162,30 +165,35 @@ trait CanSaveDataByDatabaseTrait
 
         $values = [];
         foreach ($this->toArray() as $column => $value) {
-            if (in_array($column, array_keys(AbstractObjectData::$casts[static::class] ?? []))) {
+            if (in_array($column, array_keys(AbstractObjectData::$casts[static::class] ?? [])) && $value != ($this->_original[$column] ?? null)) {
                 $values[$column] = $value;
             }
-
         }
+        $hasUpdateDatabase = true;
+        $result = 0;
 
-        if ($id = $this->{$primaryKey}) {
+        if (($id = $this->id()) && $values) {
             $sqlBuilder = $this->buildSelectSql([], 'save');
             $sqlBuilder->where($this->getPrimaryKey(), $id);
-
             $result = $db->query($query = $sqlBuilder->toUpdateSql($values));
-        } else {
+            $values = array_merge($this->_original, $values);
+        } elseif ($values) {
             $sqlBuilder = $this->buildSelectSql([], 'insert');
             $result = $db->query($query = $sqlBuilder->toInsertSql($values));
-
-            $this->addData([$primaryKey => $db->last_insert_id($sqlBuilder->getTable())]);
+            $id = $db->last_insert_id($sqlBuilder->getTable());
+            $values[$primaryKey] = $id;
+            $this->addData([$primaryKey => $id]);
+        } else {
+            $hasUpdateDatabase = false;
         }
 
-        if ($db->lasterror()) {
-
+        if ($hasUpdateDatabase && $db->lasterror()) {
             throw new Exception($query . PHP_EOL . $db->lasterror());
         }
-
-        return empty($db->lasterrno);
+        if ($hasUpdateDatabase) {
+            $this->_original = $values;
+        }
+        return $hasUpdateDatabase;
     }
 
 }

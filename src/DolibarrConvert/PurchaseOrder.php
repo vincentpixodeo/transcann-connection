@@ -162,7 +162,7 @@ class PurchaseOrder extends Model
 
         $dataSend['EdiReceptionDetailsList'] = $this->getEdiReceptionDetailsList();
         $mapping = $this->getMappingInstance()->fetch();
-    
+
         if ($mapping) {
             $api = new Receptions();
             if ($api->execute(['listReceptions' => [$dataSend]])) {
@@ -175,6 +175,9 @@ class PurchaseOrder extends Model
                 $mapping->transcan_payload = json_encode($result['result']['FlowsId']);
                 $mapping->save();
                 return true;
+            } else {
+                $errors = $api->getErrors();
+                throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
             }
         }
         return false;

@@ -11,6 +11,7 @@ use WMS\Xtent\DolibarrConvert\TranscannSyncException;
 
 function getDbInstance(): \WMS\Xtent\Database\DoliDB
 {
+
     static $db;
     if (empty($db)) {
         global $conf;
@@ -30,9 +31,9 @@ function getDbPrefix(): string
  * @param array|string $name
  * @param array $data
  * @return int|string|null
- * @throws Exception
+ *
  */
-function addAction(array|string $name, array $data): int|string|null
+function addAction(array|string $name, array $data = [], $executeNow = false): int|string|null
 {
     if (is_array($name)) {
         list($instance, $method) = $name;
@@ -46,18 +47,24 @@ function addAction(array|string $name, array $data): int|string|null
 
     $instance->save();
 
+    if ($executeNow) {
+        executeAction($instance, false);
+    }
+
     return $instance->id();
 }
 
-function executeAction(Action $action): void
+function executeAction(Action $action, $allowRetry = true): void
 {
     $db = getDbInstance();
     list($instance, $method) = explode('@', $action->action);
+    $failStatus = $allowRetry ? Action::STATUS_INIT : Action::STATUS_PROCESSED;
     $action->save([
         'action' => $action->action,
         'retries' => $action->retries + 1,
         'status' => Action::STATUS_PROCESSING
     ]);
+
     $data = json_decode($action->payload, true);
     $result = new ActionResult(['action_id' => $action->id()]);
     try {
@@ -65,10 +72,15 @@ function executeAction(Action $action): void
             throw new Exception('Class not exist :' . $instance);
         }
         $result->save(['status' => ActionResult::STATUS_START]);
-        (new $instance($data ?? []))->{$method}();
-        $result->save(['status' => ActionResult::STATUS_SUCCESS]);
+        $return = (new $instance($data ?? []))->{$method}($data);
+        $result->save([
+            'status' => ActionResult::STATUS_SUCCESS,
+            'response' => json_encode($return ?? 'null')
+        ]);
         $action->save([
-            'status' => Action::STATUS_PROCESSED
+            'status' => Action::STATUS_PROCESSED,
+            'last_result_id' => $result->id(),
+            'last_result_status' => $result->status,
         ]);
     } catch (TranscannSyncException $exception) {
         $payload = [];
@@ -82,22 +94,26 @@ function executeAction(Action $action): void
         }
 
         $result->save([
-            'payload' => $db->escape(serialize($payload)),
-            'response' => $db->escape(json_encode($response)),
-            'error' => $db->escape($error),
+            'payload' => serialize($payload),
+            'response' => json_encode($response),
+            'error' => $error,
             'status' => ActionResult::STATUS_FAIL
         ]);
         $action->save([
-            'status' => Action::STATUS_INIT
+            'status' => $failStatus,
+            'last_result_id' => $result->id(),
+            'last_result_status' => $result->status,
         ]);
     } catch (Exception $exception) {
-        $action->save([
-            'status' => Action::STATUS_INIT
-        ]);
         $result->save([
-            'response' => $db->escape($exception->getTraceAsString()),
-            'error' => $db->escape($exception->getMessage()),
+            'response' => $exception->getTraceAsString(),
+            'error' => $exception->getMessage(),
             'status' => ActionResult::STATUS_FAIL
+        ]);
+        $action->save([
+            'status' => $failStatus,
+            'last_result_id' => $result->id(),
+            'last_result_status' => $result->status,
         ]);
     }
 }

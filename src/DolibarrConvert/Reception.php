@@ -185,6 +185,7 @@ class Reception extends Model
 
     function updateDataFromTranscann(array $data = []): bool
     {
+
         return true;
     }
 

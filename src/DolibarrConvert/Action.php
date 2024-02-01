@@ -17,6 +17,8 @@ use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
  * @property string payload
  * @property int status
  * @property int retries
+ * @property int last_result_id
+ * @property int last_result_status
  */
 class Action extends AbstractObjectData implements ObjectDataInterface, CanSaveDataInterface
 {
