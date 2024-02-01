@@ -15,8 +15,15 @@ use WMS\Xtent\Data\Reception as TranscannReception;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingReception;
 
 /**
- * @property int rowid
- * @property string ref
+ * @property int $rowid
+ * @property string $ref
+ * @property int $entity
+ * @property int $fk_soc
+ * @property int $fk_projet
+ * @property int $ref_supplier
+ * @property string $ref_ext
+ * @property int $fk_statut
+ * @property int $billed
  * @property DateTime date_delivery
  * @property DateTime date_reception
  * @property string tracking_number

@@ -8,6 +8,7 @@ namespace WMS\Xtent\DolibarrConvert;
 
 use DateTime;
 use WMS\Xtent\Apis\IntegrationWebServices\Receptions;
+use WMS\Xtent\Apis\QueryWebServices\GetReceptions;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Preparation;
 use WMS\Xtent\Database\Builder\QueryBuilder;
@@ -67,6 +68,19 @@ class PurchaseOrder extends Model
 
     function updateDataFromTranscann(array $data = []): bool
     {
+        $mapping = $this->getMappingInstance();
+        if ($mapping && $mapping->id() && $mapping->transcan_id) {
+            $api = new GetReceptions();
+            if ($api->execute(['filters' => "Id={$mapping->transcan_id}"])) {
+                $data = $api->getResponse()->getData()['result'][0] ?? null;
+                if ($data) {
+                    $mapping->save(['transcan_payload' => json_encode($data)]);
+                }
+            } else {
+                $errors = $api->getErrors();
+                throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
+            }
+        }
         return true;
     }
 
@@ -96,8 +110,8 @@ class PurchaseOrder extends Model
         foreach ($lines as $index => $line) {
 
             $EdiReceptionDetailsList[] = [
-                "BatchNumber" => $this->batch,
-                "Comments" => $this->comment,
+                "BatchNumber" => null,
+                "Comments" => null,
                 "CRD" => null,
                 "CurrencyId" => null,
                 "CustomizedDate1" => null,
@@ -148,20 +162,48 @@ class PurchaseOrder extends Model
 
     function pushDataToTranscann(array $data = []): bool
     {
+        $reception = new Reception([
+            'ref' => $this->ref,
+            'entity' => 1,
+            'fk_soc' => $this->fk_soc,
+            'fk_projet' => $this->fk_projet,
+            'ref_ext' => $this->ref_ext,
+            'ref_supplier' => $this->ref_supplier,
+            'fk_statut' => 0,
+            'billed' => 0,
+        ]);
+        $reception->save();
+
+        $lines = PurchaseOrderLine::get(['fk_commande' => $this->id()]);
+        foreach ($lines as $index => $line) {
+            $line = new ReceptionLine([
+                'fk_commande' => $this->id(),
+                'fk_product' => $line->fk_product,
+                'fk_commandefourndet' => $line->id(),
+                'fk_projet' => $this->fk_projet,
+                'fk_reception' => $reception->id(),
+                'qty' => $line->qty,
+                'status' => 0,
+                'comment' => 'Add by Auto',
+                'batch' => 'RECEPTION-LINE' . uniqid(),
+            ]);
+            $line->save();
+        }
+//        $reception->pushDataToTranscann();
+
         $dataSend = [
             "Order" => $this->ref,
             "SupplierReference" => $this->ref_supplier,
             "ClientCodeId" => 2000,
             "MovementCodeId" => "ENT",
             "AppointmentDate" => null,
-            "ArrivalDate" => $this->date_valid?->format('YmdHi'),
+            "ArrivalDate" => null,
             "DateOfPlannedReceiving" => $this->date_approve?->format('YmdHi'),
             "Comments" => "INTEGRE PAR API"
         ];
 
-
         $dataSend['EdiReceptionDetailsList'] = $this->getEdiReceptionDetailsList();
-        $mapping = $this->getMappingInstance()->fetch();
+        $mapping = $reception->getMappingInstance()->fetch();
 
         if ($mapping) {
             $api = new Receptions();
@@ -190,19 +232,19 @@ class PurchaseOrder extends Model
 
     protected static function boot(): void
     {
-        static::sqlEvent('init', function (QueryBuilder $queryBuilder) {
-            $orderTable = 'llx_commande_fournisseur';
-            $joinTable = 'llx_commande_fournisseur_dispatch';
-            $queryBuilder->select([
-                "{$orderTable}.*",
-                "{$joinTable}.batch",
-                "{$joinTable}.fk_product",
-                "{$joinTable}.fk_entrepot",
-                "{$joinTable}.qty",
-                "{$joinTable}.comment",
-            ]);
-
-            $queryBuilder->join($joinTable, 'rowid', 'fk_commande', QueryJoinType::LeftJoin);
-        });
+//        static::sqlEvent('init', function (QueryBuilder $queryBuilder) {
+//            $orderTable = 'llx_commande_fournisseur';
+//            $joinTable = 'llx_commande_fournisseur_dispatch';
+//            $queryBuilder->select([
+//                "{$orderTable}.*",
+//                "{$joinTable}.batch",
+//                "{$joinTable}.fk_product",
+//                "{$joinTable}.fk_entrepot",
+//                "{$joinTable}.qty",
+//                "{$joinTable}.comment",
+//            ]);
+//
+//            $queryBuilder->join($joinTable, 'rowid', 'fk_commande', QueryJoinType::LeftJoin);
+//        });
     }
 }
