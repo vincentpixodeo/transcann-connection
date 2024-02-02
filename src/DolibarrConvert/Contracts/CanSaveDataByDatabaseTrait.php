@@ -25,14 +25,47 @@ trait CanSaveDataByDatabaseTrait
 
     abstract public function getPrimaryKey(): string;
 
-    public function id(): string|int|null
+    public function id($value = null): string|int|null
     {
+        if (!is_null($value)) {
+            $this->{$this->getPrimaryKey()} = $value;
+        }
         return $this->{$this->getPrimaryKey()};
     }
 
     protected function defaultCondition(): array
     {
         return [];
+    }
+
+    /**
+     * @param array $fields
+     * @param array $wheres
+     * @return bool|resource
+     * @throws Exception
+     */
+    static function update(array $fields, array $wheres)
+    {
+        $values = [];
+        $sqlBuilder = (new static())->buildSelectSql();
+
+        foreach ($fields as $column => $value) {
+            if (in_array($column, array_keys(AbstractObjectData::$casts[static::class] ?? []))) {
+                $values[$column] = $value;
+            }
+        }
+        if (!$values) return false;
+
+        $db = getDbInstance();
+        $sqlBuilder->where($wheres);
+        $query = $sqlBuilder->toUpdateSql($values);
+
+        $result = $db->query($query);
+
+        if ($db->lasterror()) {
+            throw new Exception($query . PHP_EOL . $db->lasterror());
+        }
+        return $result;
     }
 
     /**
@@ -49,9 +82,8 @@ trait CanSaveDataByDatabaseTrait
 
     /**
      * @param array $condition
-     * @param int|null $limit
-     * @param int|null $offset
-     * @return Generator{static}
+     * @param callable|null $queryBuilderCallback
+     * @return Generator
      * @throws Exception
      */
     static function get(array $condition = [], callable $queryBuilderCallback = null): Generator

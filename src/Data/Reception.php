@@ -67,7 +67,7 @@ use WMS\Xtent\Contracts\AbstractObjectData;
  * @property string ModificationUser
  * @property int NumberOfSU
  * @property string OfficeId
- * @property int Order
+ * @property string Order
  * @property string QuayArea
  * @property string QuayCode
  * @property string ReceiverName

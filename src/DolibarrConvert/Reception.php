@@ -7,12 +7,16 @@
 namespace WMS\Xtent\DolibarrConvert;
 
 use DateTime;
-use WMS\Xtent\Apis\IntegrationWebServices\Receptions as IntegrationWebServices_Receptions;
-use WMS\Xtent\Apis\QueryWebServices\CheckFlowIntegrationStatus;
+use Exception;
+use Generator;
+use WMS\Xtent\Apis\IntegrationWebServices\Receptions;
 use WMS\Xtent\Contracts\ObjectDataInterface;
-use WMS\Xtent\Data\Item;
+use WMS\Xtent\Data\Enums\ReceptionStatus;
 use WMS\Xtent\Data\Reception as TranscannReception;
+use WMS\Xtent\Database\Builder\QueryBuilder;
+use WMS\Xtent\Database\Builder\QueryJoinType;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingReception;
+use WMS\Xtent\DolibarrConvert\Pivots\MappingWarehouse;
 
 /**
  * @property int $rowid
@@ -23,17 +27,23 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingReception;
  * @property int $ref_supplier
  * @property string $ref_ext
  * @property int $fk_statut
+ * @property int $fk_user_author
  * @property int $billed
- * @property DateTime date_delivery
- * @property DateTime date_reception
- * @property string tracking_number
- * @property int weight_units
- * @property float weight
+ * @property DateTime $date_delivery
+ * @property DateTime $date_reception
+ * @property string $tracking_number
+ * @property int $weight_units
+ * @property float $weight
+ *
+ * table element_element
+ * @property int $fk_source
+ * @property string $fk_sourcetype
  * dolibarr data 'fourn/class/fournisseur.commande.class.php'
  * $table llx_reception
  */
 class Reception extends Model
 {
+    public ?PurchaseOrder $order = null;
 
     function getMapAttributes(): array
     {
@@ -41,93 +51,43 @@ class Reception extends Model
         ];
     }
 
-    /**
-     * @return PurchaseOrder[]|null
-     */
-    function lines(): ?array
+    function order(): ?PurchaseOrder
     {
-        $order = new PurchaseOrder();
-        $orderTable = getDbPrefix() . ltrim($order->getMainTable(), getDbPrefix());
-        $joinTable = 'llx_commande_fournisseur_dispatch';
-        $select = [
-            "{$orderTable}.*",
-            "{$joinTable}.batch",
-            "{$joinTable}.fk_product",
-            "{$joinTable}.fk_entrepot",
-            "{$joinTable}.qty",
-            "{$joinTable}.comment",
-        ];
-        $sqlSelect = implode(', ', $select);
 
-        $where = [
-            $joinTable . '.fk_reception' => $this->id(),
-        ];
-
-        $whereArr = [];
-
-        foreach ($where as $k => $vl) {
-            $whereArr[] = "{$k} = '{$vl}'";
+        if (is_null($this->order)) {
+            $this->order = PurchaseOrder::load($this->fk_source);
         }
-        $sqlWhere = implode(' AND ', $whereArr);
-
-        $query = "SELECT {$sqlSelect} FROM {$orderTable} INNER JOIN {$joinTable} ON {$joinTable}.fk_commande = {$orderTable}.rowid WHERE {$sqlWhere}";
-
-
-        $db = getDbInstance();
-        $results = $db->query($query);
-        $orders = [];
-        if ($results) {
-            while ($row = $db->fetch_object($results)) {
-                $orders[] = new PurchaseOrder((array)$row);
-            }
-            return $orders;
-        }
-        return null;
+        return $this->order;
     }
 
-    function getTranscanInstance(): string|ObjectDataInterface
+    protected function getEdiReceptionDetailsList(): array
     {
-        return new TranscannReception();
-    }
-
-    public function getMainTable(): string
-    {
-        return 'reception';
-    }
-
-    /**
-     * @param PurchaseOrder[] $lines
-     * @return array
-     */
-    function getDataSendToTranscan(array $lines): array
-    {
-
-        $dataSend = $this->convertToTranscan()->toArray();
-        $dataSend = $dataSend + [
-                "Order" => $lines[0]->ref,
-                "SupplierReference" => $lines[0]->ref,
-                "ClientCodeId" => 2000,
-                "MovementCodeId" => "ENT",
-                "AppointmentDate" => null,
-                "ArrivalDate" => $lines[0]->date_valid?->format('YmdHi'),
-                "DateOfPlannedReceiving" => $lines[0]->date_approve?->format('YmdHi'),
-                "Comments" => "INTEGRE PAR API"
-            ];
-
         $EdiReceptionDetailsList = [];
-
-        foreach ($lines as $index => $order) {
-
-            $productMapping = (new Product(['rowid' => $order->fk_product]))->getMappingInstance();
-            if (!$productMapping || !$productMapping->transcan_id) {
-                throw new \Exception("plz sync the product #{$order->fk_product} before");
-            }
-            /** @var Item|null $productTranscanInstance */
-            $productTranscanInstance = $productMapping->getPayload();
+        $lines = PurchaseOrderLine::get(['fk_commande' => $this->order()->id()], function (QueryBuilder $queryBuilder) {
+            $queryBuilder->join('llx_product', 'fk_product', 'rowid')
+                ->join('llx_product_fournisseur_price', 'llx_product.rowid', 'llx_product_fournisseur_price.fk_product', QueryJoinType::LeftJoin)
+                ->join('llx_c_units', 'llx_product.fk_unit', 'llx_c_units.rowid', QueryJoinType::LeftJoin)
+                ->join('llx_product_extrafields', 'llx_product.rowid', 'llx_product_extrafields.fk_object', QueryJoinType::LeftJoin)
+                ->select([
+                    'llx_commande_fournisseurdet.*',
+                    'llx_product.ref as llx_product_ref',
+                    'llx_product.label as llx_product_label',
+                    'llx_product_fournisseur_price.ref_fourn as llx_product_fournisseur_price_ref_fourn',
+                    'llx_product.tobatch as llx_product_tobatch',
+                    'llx_c_units.code as llx_c_units_code',
+                    'llx_c_units.label as llx_c_units_label',
+                    'llx_product_extrafields.unitparcarton as llx_product_extrafields_unitparcarton',
+                    'llx_product_extrafields.cartonsparplan as llx_product_extrafields_cartonsparplan',
+                    'llx_product_extrafields.planpalette as llx_product_extrafields_planpalette',
+                    'llx_product.weight as llx_product_weight',
+                    'llx_product.net_measure as llx_product_net_measure',
+                ]);
+        });
+        foreach ($lines as $index => $line) {
 
             $EdiReceptionDetailsList[] = [
-                "BatchNumber" => $order->batch,
-                "Comments" => $order->comment,
+                "BatchNumber" => null,
+                "Comments" => null,
                 "CRD" => null,
                 "CurrencyId" => null,
                 "CustomizedDate1" => null,
@@ -153,35 +113,53 @@ class Reception extends Model
                 "ExpiryDate" => null,
                 "ExternalItemId" => null,
                 "ExternalLineNumber" => null,
-                "GrossWeight" => null,
+                "GrossWeight" => $line->llx_product_weight,
                 "Id" => 0,
                 "Inner" => null,
-                "InternalItemId" => $productTranscanInstance?->Id,
-                "ItemCode" => $productTranscanInstance?->ItemCode,
-                "LayersPerPallet" => null,
+                "InternalItemId" => $line->fk_product,
+                "ItemCode" => $line->ref,
                 "LineNumber" => $index + 1,
                 "MultiReferencePalletId" => null,
-                "NetWeight" => $productTranscanInstance?->ParcelNetWeight,
+                "NetWeight" => null,
                 "Outer" => null,
                 "PackagingCode" => null,
                 "Pallet" => "PAL0123456789",
                 "PalletOccupationDepth" => null,
                 "PalletOccupationHeight" => null,
                 "PalletOccupationWidth" => null,
-                "ParcelsPerLayer" => null,
+                "ParcelsPerLayer" => $line->llx_product_extrafields_cartonsparplan,
+                "LayersPerPallet" => $line->llx_product_extrafields_cartonsparplan,
                 "StatusCodeId" => null,
-                "Value" => $order->cost_price
+                "Value" => $line->subprice
             ];
         }
+        return $EdiReceptionDetailsList;
+    }
 
-        return $dataSend + [
-                "EdiReceptionDetailsList" => $EdiReceptionDetailsList
-            ];
+    function getTranscanInstance(): string|ObjectDataInterface
+    {
+        return new TranscannReception();
+    }
+
+    public function getMainTable(): string
+    {
+        return 'reception';
     }
 
     function getAppendAttributes(): array
     {
-        return [];
+        $order = $this->order();
+        return [
+            "Order" => $order->ref,
+            "SupplierReference" => $order->ref_supplier,
+            "ClientCodeId" => 2000,
+            "MovementCodeId" => "ENT",
+            "AppointmentDate" => null,
+            "ArrivalDate" => null,
+            "DateOfPlannedReceiving" => $order->date_approve?->format('YmdHi'),
+            "Comments" => "INTEGRE PAR API",
+            "EdiReceptionDetailsList" => $this->getEdiReceptionDetailsList()
+        ];
 
     }
 
@@ -190,46 +168,84 @@ class Reception extends Model
         return MappingReception::class;
     }
 
+    function lines(callable $queryBuilderCallback = null): Generator
+    {
+        return ReceptionLine::get(['fk_reception' => $this->id()], function (QueryBuilder $queryBuilder) use ($queryBuilderCallback) {
+            $queryBuilder->join('llx_product', 'fk_product', 'rowid');
+            $queryBuilder->select([
+                'llx_commande_fournisseur_dispatch.*',
+                'llx_product.ref as fk_product_ref'
+            ]);
+            if ($queryBuilderCallback) {
+                $queryBuilderCallback($queryBuilder);
+            }
+        });
+    }
+
+    /**
+     * @param array $data Data of Reception Transcan
+     * @return bool
+     * @throws Exception
+     */
+
     function updateDataFromTranscann(array $data = []): bool
     {
+        $transcanReception = new \WMS\Xtent\Data\Reception($data);
 
-        return true;
+        $mapping = MappingReception::load($transcanReception->Id, 'transcan_id');
+        if ($mapping) {
+
+            $this->setMappingInstance($mapping);
+            $this->id($mapping->fk_object_id);
+            $mappingWarehouse = MappingWarehouse::load($transcanReception->Warehouse, 'transcan_id');
+            if ($transcanReception->StatusReception == ReceptionStatus::Validated->value) {
+                $this->fk_statut = 1;
+                $dataUpdate = [];
+                foreach ($transcanReception->ReceptionDetailsList as $receptionDetail) {
+                    $dataUpdate[$receptionDetail->ItemReceived->ItemCode] = [
+                        'batch' => $receptionDetail->BatchNumber,
+                        'qty' => $receptionDetail->ReceivedSaleUnit,
+                        'comment' => $receptionDetail->Comments,
+                        'fk_entrepot' => $mappingWarehouse?->fk_object_id
+                    ];
+                }
+                QueryBuilder::begin();
+                try {
+                    /** @var ReceptionLine $line */
+                    foreach ($this->lines() as $line) {
+                        if ($dataSave = ($dataUpdate[$line->fk_product_ref] ?? null)) {
+                            $line->save($dataSave);
+                        }
+                    }
+                    $this->save();
+                    QueryBuilder::commit();
+                    return true;
+                } catch (Exception $exception) {
+                    QueryBuilder::rollback();
+                    throw $exception;
+                }
+
+            }
+        }
+        return false;
     }
 
     function pushDataToTranscann(array $data = []): bool
     {
         $mapping = $this->getMappingInstance()->fetch();
-        $lines = $this->lines();
-
-        /* Action push data to Transcann*/
-        if ($mapping && $lines) {
-            $dataSend = $this->getDataSendToTranscan($lines);
-
-            $api = new IntegrationWebServices_Receptions();
-            $dataSend += $data;
-
-            if ($api->execute([
-                'listReceptions' => $dataSend
-            ])) {
+        $dataSend = $this->convertToTranscan()->toArray();
+        if ($mapping) {
+            $api = new Receptions();
+            if ($api->execute(['listReceptions' => [$dataSend]])) {
                 $result = $api->getResponse()->getData();
                 $transcannId = $result['result']['ResultOfReceptionsIntegration'][0]['XtentReceptionId'] ?? null;
-                $transcannMetaId = $result['result']['ResultOfReceptionsIntegration'][0]['SupplierReference'] ?? null;
+                $transcannMetaId = $result['result']['ResultOfReceptionsIntegration'][0]['OrderReference'] ?? null;
                 $folowId = $result['result']['FlowsId'][0]['FlowID'] ?? null;
-
-                $apiFlow = new CheckFlowIntegrationStatus();
-                if ($apiFlow->execute($folowId)) {
-                    $checkResult = $apiFlow->getResponse()->getData();
-                    if ("OK" == ($checkResult['result']['FlowStatus'] ?? null)) {
-                        $mapping->transcan_id = $transcannId;
-                        $mapping->transcan_meta_id = $transcannMetaId;
-                        $mapping->save();
-                    } else {
-                        throw new TranscannSyncException(new \Exception('Result Fail'), $apiFlow->getClient()->getLogs());
-                    }
-                } else {
-                    $errors = $apiFlow->getErrors();
-                    throw new TranscannSyncException(array_pop($errors), $apiFlow->getClient()->getLogs());
-                }
+                $mapping->transcan_id = $transcannId;
+                $mapping->transcan_meta_id = $transcannMetaId;
+                $mapping->transcan_payload = json_encode($result['result']['FlowsId']);
+                $mapping->save();
+                return true;
             } else {
                 $errors = $api->getErrors();
                 throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
@@ -241,5 +257,19 @@ class Reception extends Model
     public function getPrimaryKey(): string
     {
         return 'rowid';
+    }
+
+    protected static function boot(): void
+    {
+        static::sqlEvent('init', function (QueryBuilder $queryBuilder) {
+            $mainTable = $queryBuilder->getTable();
+            $table = getDbPrefix() . 'element_element';
+            $queryBuilder->joinWhere($table . ' as el', [['el.fk_target = ' . $mainTable . '.rowid'], ['el.targettype = "reception"']]);
+            $queryBuilder->select([
+                $mainTable . '.*',
+                'el.fk_source',
+                'el.sourcetype',
+            ]);
+        });
     }
 }

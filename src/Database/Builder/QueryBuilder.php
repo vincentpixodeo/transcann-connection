@@ -24,6 +24,21 @@ class QueryBuilder
     private ?string $orderBy;
 
 
+    static function begin(): void
+    {
+        getDbInstance()->query('BEGIN');
+    }
+
+    static function commit(): void
+    {
+        getDbInstance()->query('COMMIT');
+    }
+
+    static function rollback(): void
+    {
+        getDbInstance()->query('ROLLBACK');
+    }
+
     private function resetQuery()
     {
         $this->table = null;
@@ -56,15 +71,25 @@ class QueryBuilder
 
     public function join($table, string $localColumn, string $foreignColumn, QueryJoinType $join = null, $onTable = null): static
     {
-        is_null($join) && $join = QueryJoinType::InnerJoin;
-
         list($localColumn, $localTable) = $this->detectColumn($localColumn);
         list($foreignColumn, $foreignTable) = $this->detectColumn($foreignColumn);
-
+        list($table, $alias) = $this->detectAlias($table);
+        is_null($join) && $join = QueryJoinType::InnerJoin;
         is_null($localTable) && $localTable = $onTable ?? $this->table;
         is_null($foreignTable) && $foreignTable = $table;
 
-        $this->joins[] = "{$join->value} `{$table}` ON `{$localTable}`.`{$localColumn}` = `{$foreignTable}`.`{$foreignColumn}`";
+        $table = "`{$table}`" . ($alias ? " as {$alias}" : '');
+
+        $this->joins[] = "{$join->value} {$table} ON `{$localTable}`.`{$localColumn}` = `{$foreignTable}`.`{$foreignColumn}`";
+        return $this;
+    }
+
+    public function joinWhere($table, array $wheres, QueryJoinType $join = null): static
+    {
+        is_null($join) && $join = QueryJoinType::InnerJoin;
+        list($table, $alias) = $this->detectAlias($table);
+        $table = "`{$table}`" . ($alias ? " as {$alias}" : '');
+        $this->joins[] = "{$join->value} $table ON " . $this->buildWhere([$this->addWhere($wheres)]);
         return $this;
     }
 
@@ -74,7 +99,7 @@ class QueryBuilder
         foreach ($columns as $temp) {
 
             list($field, $alias) = $this->detectAlias($temp);
-            
+
             /*detect select by SQL function*/
             if (preg_match('(\w*\s?\(.*\))', $field)) {
                 $this->columns[$temp] = trim($field) . ($alias ? " as {$alias}" : "");
@@ -276,9 +301,9 @@ class QueryBuilder
                 if (is_numeric($value)) {
                     $setArr[] = "`$column` = '{$value}'";
                 } else {
-                    $setArr[] = "`$column` = '".mysqli_real_escape_string(getDbInstance()->db, $value)."'";
+                    $setArr[] = "`$column` = '" . mysqli_real_escape_string(getDbInstance()->db, $value) . "'";
                 }
-                
+
             }
         }
         $setSql = implode(', ', $setArr);
@@ -294,9 +319,9 @@ class QueryBuilder
             if (is_numeric($value)) {
                 $values[] = "'$value'";
             } else {
-                $values[] = "'".mysqli_real_escape_string(getDbInstance()->db, $value)."'";
+                $values[] = "'" . mysqli_real_escape_string(getDbInstance()->db, $value) . "'";
             }
-            
+
         }
         $valueSql = implode(', ', $values);
 

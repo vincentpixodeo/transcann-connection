@@ -47,4 +47,9 @@ trait DoSyncWithTranscannTrait
         return $this->_mappingInstance;
     }
 
+    protected function setMappingInstance(ModelPivot $instance = null): static
+    {
+        $this->_mappingInstance = $instance;
+        return $this;
+    }
 }

@@ -161,6 +161,7 @@ class SaleOrder extends Model
 
     function pushDataToTranscann(array $data = []): bool
     {
+        $this->fetch();
         $mapping = $this->getMappingInstance()->fetch();
 
         /* Action push data to Transcann*/

@@ -13,7 +13,7 @@ use WMS\Xtent\DolibarrConvert\TranscannSyncException;
 
 class PushAllProductToTranscann
 {
-    const NUM_LINES = 20;
+    const NUM_LINES = 100;
 
     public array $dataSend = [];
     public array $mapItemCode = [];
@@ -28,15 +28,19 @@ class PushAllProductToTranscann
             $this->mapItemCode[$product->llx_product_ref] = $product->rowid;
             $this->dataSend[] = $product->convertToTranscan()->toArray();
             if (count($this->dataSend) == self::NUM_LINES) {
-                addAction([self::class, 'pushData'], $this->dataSend, $executeNow);
+                addAction([self::class, 'pushData'], ['listItems' => $this->dataSend, 'mapItemCode' => $this->mapItemCode], $executeNow);
                 $this->dataSend = [];
+                $this->mapItemCode = [];
             }
         }
-        addAction([self::class, 'pushData'], $this->dataSend, $executeNow);
+
+        addAction([self::class, 'pushData'], ['listItems' => $this->dataSend, 'mapItemCode' => $this->mapItemCode], $executeNow);
     }
 
-    function pushData(array $dataSend = [])
+    function pushData(array $data = [])
     {
+        $dataSend = $data['listItems'] ?? [];
+        $mapItemCode = $data['mapItemCode'] ?? [];
         if (!$dataSend) return false;
 
         $api = new Items();
@@ -45,7 +49,7 @@ class PushAllProductToTranscann
             $result = $resData['result']['ResultOfItemsIntegration'] ?? [];
             $flowsId = $resData['result']['FlowsId'];
             foreach ($result as $transcan) {
-                $productId = $this->mapItemCode[$transcan['ItemCode'] ?? 'NONE'];
+                $productId = $mapItemCode[$transcan['ItemCode'] ?? 'NONE'];
                 $p = new Product([
                     'rowid' => $productId
                 ]);

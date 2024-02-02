@@ -47,13 +47,14 @@ trait ConvertTranscanTrait
 
         is_string($instance) && $instance = new $instance();
 
-        foreach ($this->getMapAttributes() as $productAttribute => $transcanAttribute) {
-            $value = $this->getData($productAttribute);
+        foreach ($this->getMapAttributes() as $objectAttribute => $transcanAttribute) {
+            $value = $this->getData($objectAttribute);
             $value instanceof ObjectDataInterface && $value = $value->toArray();
             $instance->addData([$transcanAttribute => $value]);
         }
 
         $instance->addData($this->getAppendAttributes());
+
         return $instance;
     }
 }

@@ -7,7 +7,7 @@
 namespace WMS\Xtent\DolibarrConvert;
 
 use DateTime;
-use WMS\Xtent\Apis\IntegrationWebServices\Receptions;
+use Exception;
 use WMS\Xtent\Apis\QueryWebServices\GetReceptions;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Preparation;
@@ -18,14 +18,15 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingPurchaseOrder;
 /**
  * dolibarr data 'fourn/class/fournisseur.commande.class.php'
  * $table llx_commande_fournisseur
- * @property int rowid
- * @property string ref
- * @property string ref_ext
- * @property string ref_supplier
- * @property int fk_soc
- * @property int fk_projet
- * @property DateTime date_valid
- * @property DateTime date_approve
+ * @property int $rowid
+ * @property string $ref
+ * @property string $ref_ext
+ * @property string $ref_supplier
+ * @property int $fk_soc
+ * @property int $fk_projet
+ * @property int $fk_user_author
+ * @property DateTime $date_valid
+ * @property DateTime $date_approve
  *
  * property on llx_commande_fournisseur_dispatch table
  * @property string batch
@@ -162,67 +163,58 @@ class PurchaseOrder extends Model
 
     function pushDataToTranscann(array $data = []): bool
     {
-        $reception = new Reception([
-            'ref' => $this->ref,
-            'entity' => 1,
-            'fk_soc' => $this->fk_soc,
-            'fk_projet' => $this->fk_projet,
-            'ref_ext' => $this->ref_ext,
-            'ref_supplier' => $this->ref_supplier,
-            'fk_statut' => 0,
-            'billed' => 0,
-        ]);
-        $reception->save();
+        return true;
+        $this->fetch();
 
-        $lines = PurchaseOrderLine::get(['fk_commande' => $this->id()]);
-        foreach ($lines as $index => $line) {
-            $line = new ReceptionLine([
-                'fk_commande' => $this->id(),
-                'fk_product' => $line->fk_product,
-                'fk_commandefourndet' => $line->id(),
+        try {
+            QueryBuilder::begin();
+            $reception = new Reception([
+                'ref' => "(PROV{$this->id()})",
+                'entity' => 1,
+                'fk_soc' => $this->fk_soc,
                 'fk_projet' => $this->fk_projet,
-                'fk_reception' => $reception->id(),
-                'qty' => $line->qty,
-                'status' => 0,
-                'comment' => 'Add by Auto',
-                'batch' => 'RECEPTION-LINE' . uniqid(),
+                'ref_ext' => $this->ref_ext,
+                'ref_supplier' => $this->ref_supplier,
+                'fk_user_author' => $this->fk_user_author,
+                'fk_statut' => 0,
+                'billed' => 0,
             ]);
-            $line->save();
-        }
-//        $reception->pushDataToTranscann();
+            $reception->save();
+            $reception->save(['ref' => "(PROV{$reception->id()})"]);
+            $element = new ElementElement([
+                'fk_source' => $this->id(),
+                'sourcetype' => 'order_supplier',
+                'fk_target' => $reception->id(),
+                'targettype' => "reception",
+            ]);
 
-        $dataSend = [
-            "Order" => $this->ref,
-            "SupplierReference" => $this->ref_supplier,
-            "ClientCodeId" => 2000,
-            "MovementCodeId" => "ENT",
-            "AppointmentDate" => null,
-            "ArrivalDate" => null,
-            "DateOfPlannedReceiving" => $this->date_approve?->format('YmdHi'),
-            "Comments" => "INTEGRE PAR API"
-        ];
+            $element->save();
 
-        $dataSend['EdiReceptionDetailsList'] = $this->getEdiReceptionDetailsList();
-        $mapping = $reception->getMappingInstance()->fetch();
+            $reception->order = $this;
 
-        if ($mapping) {
-            $api = new Receptions();
-            if ($api->execute(['listReceptions' => [$dataSend]])) {
-                $result = $api->getResponse()->getData();
-                $transcannId = $result['result']['ResultOfReceptionsIntegration'][0]['XtentReceptionId'] ?? null;
-                $transcannMetaId = $result['result']['ResultOfReceptionsIntegration'][0]['OrderReference'] ?? null;
-                $folowId = $result['result']['FlowsId'][0]['FlowID'] ?? null;
-                $mapping->transcan_id = $transcannId;
-                $mapping->transcan_meta_id = $transcannMetaId;
-                $mapping->transcan_payload = json_encode($result['result']['FlowsId']);
-                $mapping->save();
-                return true;
-            } else {
-                $errors = $api->getErrors();
-                throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
+            $lines = PurchaseOrderLine::get(['fk_commande' => $this->id()]);
+            foreach ($lines as $index => $line) {
+                $line = new ReceptionLine([
+                    'fk_commande' => $this->id(),
+                    'fk_product' => $line->fk_product,
+                    'fk_commandefourndet' => $line->id(),
+                    'fk_projet' => $this->fk_projet,
+                    'fk_reception' => $reception->id(),
+                    'qty' => $line->qty,
+                    'cost_price' => $line->subprice,
+                    'status' => 0,
+                    'comment' => 'Add by Auto',
+                    'batch' => 'RECEPTION-LINE' . uniqid(),
+                ]);
+                $line->save();
             }
+            QueryBuilder::commit();
+        } catch (Exception $exception) {
+            QueryBuilder::rollback();
+            throw $exception;
         }
-        return false;
+
+        return $reception->pushDataToTranscann();
     }
 
     public function getPrimaryKey(): string

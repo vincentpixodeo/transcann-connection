@@ -12,11 +12,12 @@ use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataByDatabaseTrait;
 use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
 
 /**
- * @property int id
- * @property int fk_object_id
- * @property string transcan_id
- * @property string transcan_meta_id
- * @property string transcan_payload
+ * @property int $id
+ * @property int $fk_object_id
+ * @property string $transcan_id
+ * @property string $transcan_meta_id
+ * @property string $transcan_payload
+ * @property int $transcan_integrate_status
  */
 abstract class ModelPivot extends AbstractObjectData implements ObjectDataInterface, CanSaveDataInterface
 {
