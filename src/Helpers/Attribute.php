@@ -27,12 +27,14 @@ final class Attribute
      */
     function convertData($data): mixed
     {
+        if (is_null($data)) {
+            return null;
+        }
+        
         if (in_array(trim($this->instance, '\\'), self::SYSTEM_INSTANCES)) {
             return $this->_convertSystemData($data);
         }
-        if (empty($data)) {
-            return $data;
-        }
+
         if ($this->isArray && is_array($data)) {
             $data = array_map(function ($item) {
                 return new $this->instance($item);

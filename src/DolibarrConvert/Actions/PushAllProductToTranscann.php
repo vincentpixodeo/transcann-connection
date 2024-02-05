@@ -6,8 +6,10 @@
 
 namespace WMS\Xtent\DolibarrConvert\Actions;
 
-use Spatie\Async\Pool;
 use WMS\Xtent\Apis\IntegrationWebServices\Items;
+use WMS\Xtent\Database\Builder\QueryBuilder;
+use WMS\Xtent\Database\Builder\QueryConditionType;
+use WMS\Xtent\Database\Builder\QueryJoinType;
 use WMS\Xtent\DolibarrConvert\Product;
 use WMS\Xtent\DolibarrConvert\TranscannSyncException;
 
@@ -23,9 +25,15 @@ class PushAllProductToTranscann
      */
     function execute($executeNow = false)
     {
+
         /** @var Product $product */
-        foreach (Product::get() as $product) {
-            $this->mapItemCode[$product->llx_product_ref] = $product->rowid;
+        foreach (Product::get([], function (QueryBuilder $queryBuilder) {
+            $queryBuilder->join('llx_transcannconnection_mapping_products', 'rowid', 'fk_object_id', QueryJoinType::LeftJoin);
+            $queryBuilder->where([['llx_transcannconnection_mapping_products.transcan_integrate_status <>', 1], ['llx_transcannconnection_mapping_products.transcan_integrate_status', null, null, QueryConditionType::OR]]);
+            $queryBuilder->select(['llx_transcannconnection_mapping_products.transcan_integrate_status']);
+        }) as $product) {
+      
+            $this->mapItemCode[$product->ref] = $product->rowid;
             $this->dataSend[] = $product->convertToTranscan()->toArray();
             if (count($this->dataSend) == self::NUM_LINES) {
                 addAction([self::class, 'pushData'], ['listItems' => $this->dataSend, 'mapItemCode' => $this->mapItemCode], $executeNow);
@@ -57,6 +65,7 @@ class PushAllProductToTranscann
                 $mapping->transcan_id = $transcan['XtentItemId'];
                 $mapping->transcan_meta_id = $transcan['ItemCode'];
                 $mapping->transcan_payload = json_encode($flowsId);
+                $mapping->transcan_integrate_status = null;
                 $mapping->save();
             }
             return $result;

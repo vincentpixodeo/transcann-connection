@@ -185,14 +185,15 @@ class QueryBuilder
             $whereSql = "`id` = $column";
         } elseif (is_array($column)) {
             $whereSql = [];
-            foreach ($column as $temp) {
-                if (is_array($temp)) {
-                    $whereSql[] = $this->addWhere($temp);
-                } else {
-                    $whereSql[] = $this->addWhere($column[0], $column[1] ?? null, $column[2] ?? null, $column[3] ?? null);
-                    break;
+            if (is_array($column[0]) && !empty($column[0][0])) {
+                foreach ($column as $temp) {
+                    $tempWhere = $this->addWhere($temp);
+                    $whereSql[] = $tempWhere;
                 }
+            } else {
+                $whereSql = $this->addWhere($column[0], $column[1] ?? null, $column[2] ?? null, $column[3] ?? null);
             }
+
         } else {
 
             list($column, $columnOperator, $columnValue) = $this->detectOperator($column);
@@ -236,7 +237,6 @@ class QueryBuilder
                 }
             }
         }
-
         return [
             $type->value,
             $whereSql
@@ -246,7 +246,7 @@ class QueryBuilder
     public function where(): static
     {
         $args = func_get_args();
-        $this->wheres[] = $this->addWhere($args[0], $args[1] ?? null, $args[2] ?? null, QueryConditionType::AND);
+        $this->wheres[] = $this->addWhere($args[0], $args[1] ?? null, $args[2] ?? null, $args[3] ?? QueryConditionType::AND);
         return $this;
     }
 
@@ -259,21 +259,29 @@ class QueryBuilder
 
     protected function buildWhere($wheres): string
     {
+
         $sql = "";
         if ($wheres) {
             foreach ($wheres as $where) {
                 if (empty($where)) continue;
                 list($type, $condition) = $where;
-
                 if (is_array($condition)) {
-                    if (count($condition) > 1) {
-                        $sql .= (empty($sql) ? "" : " $type ") . " (" . $this->buildWhere($condition) . ") ";
-                    } else {
-                        $sql .= (empty($sql) ? "" : " $type ") . $this->buildWhere($condition);
-                    }
+                    if (is_array($condition[0])) {
+                        $sql .= (empty($sql) ? "" : " {$type} ") . " (" . $this->buildWhere($condition) . ") ";
+                    } elseif (is_array($condition[1])) {
+                        $type = $condition[0];
+                        if (count($condition[1]) > 1) {
+                            $sql .= (empty($sql) ? "" : " {$type} ") . " (" . $this->buildWhere($condition) . ") ";
+                        } else {
+                            $sql .= (empty($sql) ? "" : " {$type} ") . $this->buildWhere($condition);
+                        }
 
+                    } else {
+                        $type = $condition[0];
+                        $sql .= (empty($sql) ? "" : " {$type} ") . $condition[1];
+                    }
                 } else {
-                    $sql .= (empty($sql) ? "" : " $type ") . $condition;
+                    $sql .= (empty($sql) ? "" : " {$type} ") . $condition;
                 }
             }
         }

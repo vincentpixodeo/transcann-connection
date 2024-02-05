@@ -129,8 +129,17 @@ class Product extends Model
 
             $dataSend = $this->convertToTranscan()->toArray();
 
+            if ($dataSend['Outer'] == 0) {
+                $dataSend['Outer'] = 1;
+            }
+            if ($dataSend['LayersPerPallet'] == 0) {
+                $dataSend['LayersPerPallet'] = 1;
+            }
+            if ($dataSend['ParcelsPerLayer'] == 0) {
+                $dataSend['ParcelsPerLayer'] = 1;
+            }
+
             $dataSend = array_merge($dataSend, $data);
-            dd($dataSend);
 
             $api = new Items();
             if ($api->execute(['listItems' => [$dataSend]])) {
