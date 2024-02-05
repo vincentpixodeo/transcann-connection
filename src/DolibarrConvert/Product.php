@@ -31,8 +31,8 @@ class Product extends Model
     function getMapAttributes(): array
     {
         return [
-            'llx_product_ref' => 'ItemCode',
-            'llx_product_label' => 'Description',
+            'ref' => 'ItemCode',
+            'label' => 'Description',
             'llx_product_fournisseur_price_ref_fourn' => 'ExternalReference',
             // 'llx_product_tobatch' => 'BatchManagement',
             'llx_c_units_code' => 'UnitCode',
@@ -40,8 +40,8 @@ class Product extends Model
             'llx_product_extrafields_unitparcarton' => 'Outer',
             'llx_product_extrafields_cartonsparplan' => 'ParcelsPerLayer',
             'llx_product_extrafields_planpalette' => 'LayersPerPallet',
-            'llx_product_weight' => 'SUGrossWeight',
-            'llx_product_net_measure' => 'SUNetWeight',
+            'weight' => 'SUGrossWeight',
+            'net_measure' => 'SUNetWeight',
             'llx_categorie_ref_ext' => 'FamilyCode',
             'llx_societe_nom' => 'CustomizedField1',
 //            'llx_product_barcode' => 'ItemGencod',
@@ -99,7 +99,7 @@ class Product extends Model
 //            "FamilyCode" => "AAA",
             "EdiItemGencode" => [
                 [
-                    "ItemGencod" => $this->llx_product_barcode ?? ''
+                    "ItemGencod" => $this->barcode ?? ''
                 ]
             ]
         ];
@@ -130,6 +130,7 @@ class Product extends Model
             $dataSend = $this->convertToTranscan()->toArray();
 
             $dataSend = array_merge($dataSend, $data);
+            dd($dataSend);
 
             $api = new Items();
             if ($api->execute(['listItems' => [$dataSend]])) {
@@ -176,20 +177,20 @@ class Product extends Model
         static::sqlEvent('init', function (QueryBuilder $queryBuilder) {
             $queryBuilder->select([
                 'llx_product.rowid as rowid',
-                'llx_product.ref as llx_product_ref',
-                'llx_product.label as llx_product_label',
+                'llx_product.ref',
+                'llx_product.label',
+                'llx_product.tobatch',
+                'llx_product.weight',
+                'llx_product.net_measure',
+                'llx_product.barcode',
                 'llx_product_fournisseur_price.ref_fourn as llx_product_fournisseur_price_ref_fourn',
-                'llx_product.tobatch as llx_product_tobatch',
                 'llx_c_units.code as llx_c_units_code',
                 'llx_c_units.label as llx_c_units_label',
                 'llx_product_extrafields.unitparcarton as llx_product_extrafields_unitparcarton',
                 'llx_product_extrafields.cartonsparplan as llx_product_extrafields_cartonsparplan',
                 'llx_product_extrafields.planpalette as llx_product_extrafields_planpalette',
-                'llx_product.weight as llx_product_weight',
-                'llx_product.net_measure as llx_product_net_measure',
                 'LEFT(llx_categorie.ref_ext, 2) as llx_categorie_ref_ext',
                 'llx_societe.nom as llx_societe_nom',
-                'llx_product.barcode as llx_product_barcode',
             ]);
             $queryBuilder->join('llx_product_fournisseur_price', 'llx_product.rowid', 'llx_product_fournisseur_price.fk_product', QueryJoinType::LeftJoin)
                 ->join('llx_c_units', 'llx_product.fk_unit', 'llx_c_units.rowid', QueryJoinType::LeftJoin)

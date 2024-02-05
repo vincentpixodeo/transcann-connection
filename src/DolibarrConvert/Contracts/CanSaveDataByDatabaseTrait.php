@@ -113,7 +113,9 @@ trait CanSaveDataByDatabaseTrait
             throw new Exception($query . PHP_EOL . $db->lasterror());
         }
         while ($row = $db->fetch_object($results)) {
-            yield new static((array)$row);
+            $instance = new static((array)$row);
+            $instance->_original = (array)$row;
+            yield $instance;
         }
     }
 
