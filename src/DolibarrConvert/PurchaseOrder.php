@@ -161,15 +161,14 @@ class PurchaseOrder extends Model
         return $EdiReceptionDetailsList;
     }
 
-    function pushDataToTranscann(array $data = []): bool
+    function pushDataToTranscann(array $data = []): mixed
     {
-        return true;
         $this->fetch();
 
         try {
             QueryBuilder::begin();
             $reception = new Reception([
-                'ref' => "(PROV{$this->id()})",
+                'ref' => "(PROV-{$this->id()})",
                 'entity' => 1,
                 'fk_soc' => $this->fk_soc,
                 'fk_projet' => $this->fk_projet,
@@ -180,7 +179,7 @@ class PurchaseOrder extends Model
                 'billed' => 0,
             ]);
             $reception->save();
-            $reception->save(['ref' => "(PROV{$reception->id()})"]);
+            $reception->save(['ref' => "(RCP-{$reception->id()})"]);
             $element = new ElementElement([
                 'fk_source' => $this->id(),
                 'sourcetype' => 'order_supplier',

@@ -136,7 +136,7 @@ class Product extends Model
      */
     function pushDataToTranscann(array $data = []): Log
     {
-
+        $this->fetch();
         /** @var MappingProduct $mapping */
         $mapping = $this->getMappingInstance()->fetch();
         /* Action push data to Transcann*/

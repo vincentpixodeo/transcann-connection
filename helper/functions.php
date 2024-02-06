@@ -75,7 +75,7 @@ function executeAction(Action $action, $allowRetry = true): void
         $return = (new $instance($data ?? []))->{$method}($data);
         if ($return instanceof \WMS\Xtent\Http\Log) {
             $result->save([
-                'payload' => $return->getBody(),
+                'payload' => json_encode($return->getBody()),
                 'status' => ActionResult::STATUS_SUCCESS,
                 'response' => $return->getResponse()
             ]);

@@ -10,6 +10,7 @@ use WMS\Xtent\Database\Builder\QueryBuilder;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingProduct;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingReception;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingSaleOrder;
+use WMS\Xtent\DolibarrConvert\Pivots\MappingShipping;
 
 class CheckEntityIntegrationStatus
 {
@@ -47,7 +48,7 @@ class CheckEntityIntegrationStatus
 
     static function preparation()
     {
-        $list = MappingSaleOrder::get([
+        $list = MappingShipping::get([
             'transcan_integrate_status' => null,
             'transcan_id is not null'
         ], function (QueryBuilder $queryBuilder) {

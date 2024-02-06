@@ -14,6 +14,8 @@ trait CanSaveDataByDatabaseTrait
 {
     use HasSqlBuilder;
 
+    protected ?string $lastSql = null;
+
     protected array $_original = [];
 
 
@@ -145,12 +147,12 @@ trait CanSaveDataByDatabaseTrait
             $queryBuilderCallback($sqlBuilder);
         }
 
-        $query = (string)$sqlBuilder;
+        $this->lastSql = (string)$sqlBuilder;
 
-        $result = $db->getRow($query);
+        $result = $db->getRow($this->lastSql);
 
         if ($db->lasterror()) {
-            throw new Exception($query . PHP_EOL . $db->lasterror());
+            throw new Exception($this->lastSql . PHP_EOL . $db->lasterror());
         }
 
         if ($result) {
@@ -176,10 +178,11 @@ trait CanSaveDataByDatabaseTrait
         if ($id) {
             $db = getDbInstance();
             $sqlBuilder = $this->buildSelectSql([], 'delete');
-            $db->query($query = $sqlBuilder->toDeleteSql($this->getPrimaryKey(), $id));
+            $this->lastSql = $sqlBuilder->toDeleteSql($this->getPrimaryKey(), $id);
+            $db->query($this->lastSql);
             if ($db->lasterror()) {
 
-                throw new Exception($query . PHP_EOL . $db->lasterror());
+                throw new Exception($this->lastSql . PHP_EOL . $db->lasterror());
             }
             return true;
         }
@@ -209,11 +212,13 @@ trait CanSaveDataByDatabaseTrait
         if (($id = $this->id()) && $values) {
             $sqlBuilder = $this->buildSelectSql([], 'save');
             $sqlBuilder->where($this->getPrimaryKey(), $id);
-            $result = $db->query($query = $sqlBuilder->toUpdateSql($values));
+            $this->lastSql = $sqlBuilder->toUpdateSql($values);
+            $result = $db->query($this->lastSql);
             $values = array_merge($this->_original, $values);
         } elseif ($values) {
             $sqlBuilder = $this->buildSelectSql([], 'insert');
-            $result = $db->query($query = $sqlBuilder->toInsertSql($values));
+            $this->lastSql = $sqlBuilder->toInsertSql($values);
+            $result = $db->query($this->lastSql);
             $id = $db->last_insert_id($sqlBuilder->getTable());
             $values[$primaryKey] = $id;
             $this->addData([$primaryKey => $id]);
@@ -222,7 +227,7 @@ trait CanSaveDataByDatabaseTrait
         }
 
         if ($hasUpdateDatabase && $db->lasterror()) {
-            throw new Exception($query . PHP_EOL . $db->lasterror());
+            throw new Exception($this->lastSql . PHP_EOL . $db->lasterror());
         }
         if ($hasUpdateDatabase) {
             $this->_original = $values;

@@ -10,7 +10,6 @@ use DateTime;
 use Exception;
 use Generator;
 use WMS\Xtent\Apis\IntegrationWebServices\Preparations as IntegrationWebServices_Preparations;
-use WMS\Xtent\Apis\QueryWebServices\CheckFlowIntegrationStatus;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Preparation;
 use WMS\Xtent\Database\Builder\QueryBuilder;
@@ -42,6 +41,16 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingShipping;
  */
 class Shipping extends Model
 {
+    protected ?SaleOrder $order = null;
+
+    function order(): ?SaleOrder
+    {
+
+        if (is_null($this->order)) {
+            $this->order = SaleOrder::load($this->fk_source);
+        }
+        return $this->order;
+    }
 
     /**
      * @return Generator{ShippingItem}|null
@@ -71,7 +80,15 @@ class Shipping extends Model
     function getMapAttributes(): array
     {
         return [
-            'ref' => 'Order'
+            'ref' => 'Order',
+            'client_code' => "ConsigneeReference",
+            'client_name' => "ConsigneeName",
+            'client_zip' => "ConsigneeZipCode",
+            'client_city' => "ConsigneeCityId",
+            'client_email' => "ContactMail",
+            'client_address' => "ConsigneeAddress1",
+            'client_country' => "ConsigneeCountryId",
+            'client_phone' => "ContactPhone"
         ];
     }
 
@@ -95,6 +112,14 @@ class Shipping extends Model
     protected static function boot(): void
     {
         static::sqlEvent('init', function (QueryBuilder $builder) {
+            $mainTable = $builder->getTable();
+            $table = getDbPrefix() . 'element_element';
+            $builder->joinWhere($table . ' as el', [['el.fk_target = ' . $mainTable . '.rowid'], ['el.targettype = "shipping"']]);
+            $builder->select([
+                $mainTable . '.*',
+                'el.fk_source',
+                'el.sourcetype',
+            ]);
             $builder
                 ->select([
                     'llx_expedition.*',
@@ -113,8 +138,9 @@ class Shipping extends Model
         });
     }
 
-    function pushDataToTranscann(array $data = []): bool
+    function pushDataToTranscann(array $data = []): mixed
     {
+        $this->fetch();
 
         $this->addData($data);
         $mapping = $this->getMappingInstance()->fetch();
@@ -122,35 +148,26 @@ class Shipping extends Model
         $lines = $this->lines();
 
         $dataSend = $this->getDataSendToTranscan($lines);
+
         $api = new IntegrationWebServices_Preparations();
 
         if ($api->execute($dataSend)) {
             $result = $api->getResponse()->getData();
             $transcannId = $result['result']['ResultOfPreparationsIntegration'][0]['XtentPreparationId'] ?? null;
-            $transcannMetaId = $result['result']['ResultOfPreparationsIntegration'][0]['SupplierReference'] ?? null;
-            $folowId = $result['result']['FlowsId'][0]['FlowID'] ?? null;
-
-            $apiFlow = new CheckFlowIntegrationStatus();
-            if ($apiFlow->execute($folowId)) {
-                $checkResult = $apiFlow->getResponse()->getData();
-                if ("OK" == ($checkResult['result']['FlowStatus'] ?? null)) {
-                    $mapping->transcan_id = $transcannId;
-                    $mapping->transcan_meta_id = $transcannMetaId;
-                    $mapping->save();
-                } else {
-                    throw new TranscannSyncException(new \Exception('Result Fail'), $apiFlow->getClient()->getLogs());
-                }
-            } else {
-                $errors = $apiFlow->getErrors();
-                throw new TranscannSyncException(array_pop($errors), $apiFlow->getClient()->getLogs());
-            }
+            $transcannMetaId = $result['result']['ResultOfPreparationsIntegration'][0]['OrderReference'] ?? null;
+            $mapping->transcan_id = $transcannId;
+            $mapping->transcan_meta_id = $transcannMetaId;
+            $mapping->transcan_payload = json_encode($result['result']['FlowsId']);
+            $mapping->save();
+            return $api->getClient()->getCurrentLog();
         } else {
-            dd($api->getClient()->getLogs());
+            $errors = $api->getErrors();
+            throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
         }
         return true;
     }
 
-    function getDataSendToTranscan(Generator $lines): array
+    protected function getDataSendToTranscan(Generator $lines): array
     {
         $dataSend = $this->convertToTranscan()->toArray();
 
@@ -163,13 +180,6 @@ class Shipping extends Model
                 "ConsigneeAddress2" => null,
                 "ConsigneeAddress3" => null,
                 "ConsigneeAddress4" => null,
-                "ConsigneeCountryId" => $this->client_country,
-                "ConsigneeName" => $this->client_name,
-                "ConsigneeZipCode" => $this->client_zip,
-                "ConsigneeCityId" => $this->client_city,
-                "ContactMail" => $this->client_email,
-                "ContactName" => $this->client_name,
-                "ContactPhone" => $this->client_phone,
             ];
 
         $EdiPreparationDetailsList = [];
@@ -200,7 +210,7 @@ class Shipping extends Model
                 "LineNumber" => (string)($index + 1),
                 "OrderedFullPallets" => null,
                 "OrderedParcels" => 10,
-                "OrderedSaleUnits" => null,
+                "OrderedSaleUnits" => $line->qty,
                 "Pallet" => "00336600123456789",
                 "Status" => null,
                 "Support" => null
@@ -215,4 +225,5 @@ class Shipping extends Model
     {
         return MappingShipping::class;
     }
+
 }

@@ -159,7 +159,7 @@ class SaleOrder extends Model
         });
     }
 
-    function pushDataToTranscann(array $data = []): bool
+    function pushDataToTranscann(array $data = []): mixed
     {
         $this->fetch();
         $mapping = $this->getMappingInstance()->fetch();
@@ -170,7 +170,7 @@ class SaleOrder extends Model
             $dataSend = $this->convertToTranscan()->toArray();
 
             $api = new Preparations();
-
+            dd($dataSend);
             if ($api->execute(['listPreparations' => [$dataSend]])) {
                 $result = $api->getResponse()->getData();
                 $transcannId = $result['result']['ResultOfPreparationsIntegration'][0]['XtentPreparationId'] ?? null;
@@ -180,7 +180,7 @@ class SaleOrder extends Model
                 $mapping->transcan_meta_id = $transcannMetaId;
                 $mapping->transcan_payload = json_encode($result['result']['FlowsId']);
                 $mapping->save();
-                return true;
+                return $api->getClient()->getCurrentLog();
             } else {
                 $errors = $api->getErrors();
                 throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());

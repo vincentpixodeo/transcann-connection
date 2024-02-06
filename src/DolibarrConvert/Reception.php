@@ -230,8 +230,9 @@ class Reception extends Model
         return false;
     }
 
-    function pushDataToTranscann(array $data = []): bool
+    function pushDataToTranscann(array $data = []): null|false|\WMS\Xtent\Http\Log
     {
+        $this->fetch();
         $mapping = $this->getMappingInstance()->fetch();
         $dataSend = $this->convertToTranscan()->toArray();
         if ($mapping) {
@@ -245,7 +246,7 @@ class Reception extends Model
                 $mapping->transcan_meta_id = $transcannMetaId;
                 $mapping->transcan_payload = json_encode($result['result']['FlowsId']);
                 $mapping->save();
-                return true;
+                return $api->getClient()->getCurrentLog();
             } else {
                 $errors = $api->getErrors();
                 throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());

@@ -16,10 +16,6 @@ class QueryBuilder
     private array $columns = [];
     private array $joins = [];
     private array $wheres = [];
-    private ?string $sql = null;
-
-    private ?string $where = null;
-    private bool $isOrWhere = false;
     private ?string $limit = null;
     private ?string $orderBy;
 
