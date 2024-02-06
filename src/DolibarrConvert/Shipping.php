@@ -10,7 +10,9 @@ use DateTime;
 use Exception;
 use Generator;
 use WMS\Xtent\Apis\IntegrationWebServices\Preparations as IntegrationWebServices_Preparations;
+use WMS\Xtent\Apis\QueryWebServices\GetReceptions;
 use WMS\Xtent\Contracts\ObjectDataInterface;
+use WMS\Xtent\Data\Enums\OrderStatus;
 use WMS\Xtent\Data\Preparation;
 use WMS\Xtent\Database\Builder\QueryBuilder;
 use WMS\Xtent\Database\Builder\QueryJoinType;
@@ -58,12 +60,23 @@ class Shipping extends Model
     function lines(): ?Generator
     {
         try {
-
             return (new ShippingItem())->list(['fk_expedition' => $this->id()]);
         } catch (Exception $exception) {
             dump($exception);
             return null;
         }
+    }
+
+    function contact()
+    {
+        $contact = new StaticModel('element_contact');
+
+        return $contact->fetch($this->order()->id(), 'element_id', function (QueryBuilder $queryBuilder) {
+            $queryBuilder->join('llx_c_type_contact', 'fk_c_type_contact', 'rowid');
+            $queryBuilder->join('llx_socpeople', 'fk_socpeople', 'rowid');
+            $queryBuilder->where([['llx_c_type_contact.source', 'external'], ['llx_c_type_contact.active', 1], ['llx_c_type_contact.element', 'commande']]);
+            $queryBuilder->select(['llx_socpeople.*']);
+        });
     }
 
     public function getMainTable(): string
@@ -104,38 +117,28 @@ class Shipping extends Model
         return Preparation::class;
     }
 
-    function updateDataFromTranscann(array $data = []): bool
+    function updateDataFromTranscann(array $data = [])
     {
-        return true;
-    }
-
-    protected static function boot(): void
-    {
-        static::sqlEvent('init', function (QueryBuilder $builder) {
-            $mainTable = $builder->getTable();
-            $table = getDbPrefix() . 'element_element';
-            $builder->joinWhere($table . ' as el', [['el.fk_target = ' . $mainTable . '.rowid'], ['el.targettype = "shipping"']]);
-            $builder->select([
-                $mainTable . '.*',
-                'el.fk_source',
-                'el.sourcetype',
-            ]);
-            $builder
-                ->select([
-                    'llx_expedition.*',
-                    'llx_societe.code_client as client_code',
-                    'llx_societe.nom as client_name',
-                    'llx_societe.phone as client_phone',
-                    'llx_societe.fax as client_fax',
-                    'llx_societe.email as client_email',
-                    'llx_societe.address as client_address',
-                    'llx_societe.town as client_city',
-                    'llx_societe.zip as client_zip',
-                    'llx_c_country.code as client_country',
-                ])
-                ->join('llx_societe', 'fk_soc', 'rowid')
-                ->join('llx_c_country', 'fk_pays', 'rowid', QueryJoinType::LeftJoin, 'llx_societe');
+        $mapping = MappingShipping::load($this->id(), 'fk_object_id', function (QueryBuilder $queryBuilder) {
+            $queryBuilder->where('transcan_integrate_status', Pivots\ModelPivot::INTEGRATE_STATUS_OK);
         });
+        if ($mapping) {
+            $api = new GetReceptions();
+            if ($api->execute(['filters' => "Id={$mapping->transcan_id}"]) && $results = ($api->getResponse()->getData()['result'][0] ?? [])) {
+                /** @var Preparation $preparation */
+                $preparation = $this->getTranscanInstance();
+                $preparation->setData($results);
+                if ($preparation->OrderStatus == OrderStatus::Validated->value) {
+                    /*update status*/
+                    $this->fk_status = 1;
+                    $this->save();
+                }
+                return $api->getClient()->getCurrentLog();
+            } else {
+                $errors = $api->getErrors();
+                throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
+            }
+        }
     }
 
     function pushDataToTranscann(array $data = []): mixed
@@ -171,16 +174,29 @@ class Shipping extends Model
     {
         $dataSend = $this->convertToTranscan()->toArray();
 
-        $dataSend = $dataSend + [
-                "ClientReference" => $this->client_code,
-                "ConsigneeReference" => "REF_DEST_126",
-                "PreparationType" => "STD",
-                "PlannedDeliveryDate" => $this->date_delivery?->format('YmdHi'),
-                "ConsigneeAddress1" => $this->client_address,
-                "ConsigneeAddress2" => null,
-                "ConsigneeAddress3" => null,
-                "ConsigneeAddress4" => null,
-            ];
+        $dataSend = array_merge($dataSend, [
+            "ClientReference" => $this->client_code,
+            "ContactName" => $this->client_name,
+            "ConsigneeReference" => "REF_DEST_126",
+            "PreparationType" => "STD",
+            "PlannedDeliveryDate" => $this->date_delivery?->format('YmdHi'),
+            "ConsigneeAddress1" => $this->client_address,
+            "ConsigneeAddress2" => null,
+            "ConsigneeAddress3" => null,
+            "ConsigneeAddress4" => null,
+        ]);
+
+        if ($contact = $this->contact()) {
+            if ($contact->email) {
+                $dataSend['ContactMail'] = $contact->email;
+            }
+            if ($contact->phone) {
+                $dataSend['ContactPhone'] = $contact->phone;
+            }
+            if ($contact->lastname) {
+                $dataSend['ContactName'] = $contact->lastname;
+            }
+        }
 
         $EdiPreparationDetailsList = [];
 
@@ -224,6 +240,36 @@ class Shipping extends Model
     function getMappingClass(): string
     {
         return MappingShipping::class;
+    }
+
+
+    protected static function boot(): void
+    {
+        static::sqlEvent('init', function (QueryBuilder $builder) {
+            $mainTable = $builder->getTable();
+            $table = getDbPrefix() . 'element_element';
+            $builder->joinWhere($table . ' as el', [['el.fk_target = ' . $mainTable . '.rowid'], ['el.targettype = "shipping"']]);
+            $builder->select([
+                $mainTable . '.*',
+                'el.fk_source',
+                'el.sourcetype',
+            ]);
+            $builder
+                ->select([
+                    'llx_expedition.*',
+                    'llx_societe.code_client as client_code',
+                    'llx_societe.nom as client_name',
+                    'llx_societe.phone as client_phone',
+                    'llx_societe.fax as client_fax',
+                    'llx_societe.email as client_email',
+                    'llx_societe.address as client_address',
+                    'llx_societe.town as client_city',
+                    'llx_societe.zip as client_zip',
+                    'llx_c_country.code as client_country',
+                ])
+                ->join('llx_societe', 'fk_soc', 'rowid')
+                ->join('llx_c_country', 'fk_pays', 'rowid', QueryJoinType::LeftJoin, 'llx_societe');
+        });
     }
 
 }

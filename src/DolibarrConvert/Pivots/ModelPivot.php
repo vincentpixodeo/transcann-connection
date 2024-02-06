@@ -21,6 +21,11 @@ use WMS\Xtent\DolibarrConvert\Contracts\CanSaveDataInterface;
  */
 abstract class ModelPivot extends AbstractObjectData implements ObjectDataInterface, CanSaveDataInterface
 {
+    const INTEGRATE_STATUS_INIT = 0;
+    const INTEGRATE_STATUS_OK = 1;
+    const INTEGRATE_STATUS_FAIL = 2;
+    const INTEGRATE_STATUS_COMPLETED = 3;
+
     protected ?string $_payloadClass = null;
     protected ?ObjectDataInterface $_payloadInstance = null;
 //    use CanSaveDataByLogTrait;

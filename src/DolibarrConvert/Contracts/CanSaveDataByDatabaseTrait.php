@@ -164,6 +164,9 @@ trait CanSaveDataByDatabaseTrait
             return $this->addData($data);
         }
 
+        $this->_data = [];
+        $this->_original = [];
+
         return null;
     }
 

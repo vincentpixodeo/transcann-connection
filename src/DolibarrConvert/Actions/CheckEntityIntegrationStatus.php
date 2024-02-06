@@ -9,7 +9,6 @@ namespace WMS\Xtent\DolibarrConvert\Actions;
 use WMS\Xtent\Database\Builder\QueryBuilder;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingProduct;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingReception;
-use WMS\Xtent\DolibarrConvert\Pivots\MappingSaleOrder;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingShipping;
 
 class CheckEntityIntegrationStatus
@@ -67,9 +66,9 @@ class CheckEntityIntegrationStatus
         ])) {
             foreach ($api->getResponse()->getData()['result'] as $item) {
                 if ("OK" == ($item['EntitieStatus'])) {
-                    MappingSaleOrder::update(['transcan_integrate_status' => 1], [['transcan_id', $item['EntitieId']]]);
+                    MappingShipping::update(['transcan_integrate_status' => 1], [['transcan_id', $item['EntitieId']]]);
                 } else {
-                    MappingSaleOrder::update([
+                    MappingShipping::update([
                         'transcan_integrate_status' => 2,
                         'transcan_payload' => json_encode($item)
                     ], [['transcan_id', $item['EntitieId']]]);

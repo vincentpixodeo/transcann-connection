@@ -98,6 +98,8 @@ abstract class AbstractRequestAction implements RequestActionInterface
     public function execute(...$arguments): bool
     {
         try {
+            $this->_errors = [];
+            $this->_response = null;
             return $this->requestApi(...$arguments);
         } catch (Exception $exception) {
             $this->_errors[] = $exception;
