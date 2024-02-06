@@ -32,9 +32,10 @@ class PushAllProductToTranscann
             $queryBuilder->where([['llx_transcannconnection_mapping_products.transcan_integrate_status <>', 1], ['llx_transcannconnection_mapping_products.transcan_integrate_status', null, null, QueryConditionType::OR]]);
             $queryBuilder->select(['llx_transcannconnection_mapping_products.transcan_integrate_status']);
         }) as $product) {
-      
             $this->mapItemCode[$product->ref] = $product->rowid;
-            $this->dataSend[] = $product->convertToTranscan()->toArray();
+            $dataSend = $product->convertToTranscan()->toArray();
+
+            $this->dataSend[] = $dataSend;
             if (count($this->dataSend) == self::NUM_LINES) {
                 addAction([self::class, 'pushData'], ['listItems' => $this->dataSend, 'mapItemCode' => $this->mapItemCode], $executeNow);
                 $this->dataSend = [];
@@ -68,7 +69,7 @@ class PushAllProductToTranscann
                 $mapping->transcan_integrate_status = null;
                 $mapping->save();
             }
-            return $result;
+            return $api->getClient()->getCurrentLog();
         } else {
             $errors = $api->getErrors();
             throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());

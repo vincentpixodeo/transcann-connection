@@ -73,10 +73,19 @@ function executeAction(Action $action, $allowRetry = true): void
         }
         $result->save(['status' => ActionResult::STATUS_START]);
         $return = (new $instance($data ?? []))->{$method}($data);
-        $result->save([
-            'status' => ActionResult::STATUS_SUCCESS,
-            'response' => json_encode($return ?? 'null')
-        ]);
+        if ($return instanceof \WMS\Xtent\Http\Log) {
+            $result->save([
+                'payload' => $return->getBody(),
+                'status' => ActionResult::STATUS_SUCCESS,
+                'response' => $return->getResponse()
+            ]);
+        } else {
+            $result->save([
+                'status' => ActionResult::STATUS_SUCCESS,
+                'response' => json_encode($return ?? 'null')
+            ]);
+        }
+
         $action->save([
             'status' => Action::STATUS_PROCESSED,
             'last_result_id' => $result->id(),

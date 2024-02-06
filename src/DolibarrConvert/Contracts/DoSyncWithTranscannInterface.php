@@ -24,14 +24,14 @@ interface DoSyncWithTranscannInterface
      * @param array $data
      * @return bool
      */
-    function updateDataFromTranscann(array $data = []): bool;
+    function updateDataFromTranscann(array $data = []);
 
     /**
      * Push current Instance to Transann
      * @param array $data
      * @return bool
      */
-    function pushDataToTranscann(array $data = []): bool;
+    function pushDataToTranscann(array $data = []);
 
     /**
      * get Mapping Instance

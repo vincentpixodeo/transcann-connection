@@ -13,6 +13,7 @@ use WMS\Xtent\Data\Item;
 use WMS\Xtent\Database\Builder\QueryBuilder;
 use WMS\Xtent\Database\Builder\QueryJoinType;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingProduct;
+use WMS\Xtent\Http\Log;
 
 /**
  * @property int rowid
@@ -115,29 +116,33 @@ class Product extends Model
         return true;
     }
 
+    public function convertToTranscan(): ObjectDataInterface
+    {
+        $instance = parent::convertToTranscan();
+        if ($instance->Outer == 0) {
+            $instance->Outer = 1;
+        }
+        if ($instance->LayersPerPallet == 0) {
+            $instance->LayersPerPallet = 1;
+        }
+        if ($instance->ParcelsPerLayer == 0) {
+            $instance->ParcelsPerLayer = 1;
+        }
+        return $instance;
+    }
+
     /**
      * @throws TranscannSyncException
      */
-    function pushDataToTranscann(array $data = []): bool
+    function pushDataToTranscann(array $data = []): Log
     {
 
         /** @var MappingProduct $mapping */
         $mapping = $this->getMappingInstance()->fetch();
-
         /* Action push data to Transcann*/
         if ($mapping) {
 
             $dataSend = $this->convertToTranscan()->toArray();
-
-            if ($dataSend['Outer'] == 0) {
-                $dataSend['Outer'] = 1;
-            }
-            if ($dataSend['LayersPerPallet'] == 0) {
-                $dataSend['LayersPerPallet'] = 1;
-            }
-            if ($dataSend['ParcelsPerLayer'] == 0) {
-                $dataSend['ParcelsPerLayer'] = 1;
-            }
 
             $dataSend = array_merge($dataSend, $data);
 
@@ -157,17 +162,11 @@ class Product extends Model
                     $checkResult = $apiFlow->getResponse()->getData();
                     $mapping->transcan_payload = json_encode($checkResult);
                     $mapping->save();
-//                    if ("OK" == ($checkResult['result']['FlowStatus'] ?? null)) {
-//                        $mapping->transcan_id = $transcannId;
-//                        $mapping->transcan_meta_id = $transcannMetaId;
-//                        $mapping->save();
-//                    } else {
-//                        throw new TranscannSyncException(new \Exception('Result Fail'), $apiFlow->getClient()->getLogs());
-//                    }
                 } else {
                     $errors = $apiFlow->getErrors();
                     throw new TranscannSyncException(array_pop($errors), $apiFlow->getClient()->getLogs());
                 }
+                return $api->getClient()->getCurrentLog();
             } else {
                 $errors = $api->getErrors();
                 throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());

@@ -16,7 +16,7 @@ class CheckEntityIntegrationStatus
     static function reception(): void
     {
         $list = MappingReception::get([
-            'transcan_integrate_status <>' => 1,
+            'transcan_integrate_status' => null,
             'transcan_id is not null'
         ], function (QueryBuilder $queryBuilder) {
             $queryBuilder->select(['id', 'transcan_id']);
@@ -48,7 +48,7 @@ class CheckEntityIntegrationStatus
     static function preparation()
     {
         $list = MappingSaleOrder::get([
-            'transcan_integrate_status <>' => 1,
+            'transcan_integrate_status' => null,
             'transcan_id is not null'
         ], function (QueryBuilder $queryBuilder) {
             $queryBuilder->select(['id', 'transcan_id']);
@@ -80,7 +80,7 @@ class CheckEntityIntegrationStatus
     static function item(): void
     {
         $list = MappingProduct::get([
-            'transcan_integrate_status <>' => 1,
+            'transcan_integrate_status' => null,
             'transcan_id is not null'
         ], function (QueryBuilder $queryBuilder) {
             $queryBuilder->select(['id', 'transcan_id']);
