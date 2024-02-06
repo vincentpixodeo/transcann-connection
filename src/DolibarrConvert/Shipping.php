@@ -153,7 +153,7 @@ class Shipping extends Model
         $dataSend = $this->getDataSendToTranscan($lines);
 
         $api = new IntegrationWebServices_Preparations();
-
+      
         if ($api->execute($dataSend)) {
             $result = $api->getResponse()->getData();
             $transcannId = $result['result']['ResultOfPreparationsIntegration'][0]['XtentPreparationId'] ?? null;

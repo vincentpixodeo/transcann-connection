@@ -86,9 +86,9 @@ class StaticModel extends AbstractObjectData implements ObjectDataInterface
         }
 
         $this->lastSql = (string)$sqlBuilder;
-        echo $this->lastSql;
+     
         $result = $db->getRow($this->lastSql);
-        dd(1, $result);
+
         if ($db->lasterror()) {
             throw new Exception($this->lastSql . PHP_EOL . $db->lasterror());
         }

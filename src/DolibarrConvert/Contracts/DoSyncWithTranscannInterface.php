@@ -21,17 +21,13 @@ interface DoSyncWithTranscannInterface
 {
     /**
      * Fetch And Update current Instance with Data from Transcann
-     * @param array $data
-     * @return bool
      */
-    function updateDataFromTranscann(array $data = []);
+    function updateDataFromTranscann();
 
     /**
      * Push current Instance to Transann
-     * @param array $data
-     * @return bool
      */
-    function pushDataToTranscann(array $data = []);
+    function pushDataToTranscann();
 
     /**
      * get Mapping Instance
