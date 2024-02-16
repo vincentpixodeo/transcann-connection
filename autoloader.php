@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../master.inc.php';
 
-if (file_exists($path = __DIR__ . '/vendor/autoload.php')) {
+if (!class_exists('Luracast\Restler\AutoLoader') && file_exists($path = __DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';
 } else {
     spl_autoload_register(function ($class_name) {

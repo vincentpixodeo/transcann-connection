@@ -22,7 +22,7 @@ use WMS\Xtent\Contracts\AbstractObjectData;
  * @property string AppointmentDate
  * @property string AwbDocumentNumber
  * @property string CarriageFeeType
- * @property string Carrier
+ * @property Carrier Carrier
  * @property string CarrierName
  * @property string CashOnDeliveryAmount
  * @property Client Client
