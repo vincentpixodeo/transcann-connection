@@ -37,4 +37,8 @@ class HttpAuthRequest extends AbstractRequestAction implements HttpRequestInterf
         return $this->_client;
     }
 
+    function getCurrentLog(): ?Log
+    {
+        return $this->_client->getCurrentLog();
+    }
 }

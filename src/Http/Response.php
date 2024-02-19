@@ -22,10 +22,8 @@ class Response
      */
     public function __construct(string $response, int $code, bool $jsonException = true)
     {
-        $response = utf8_decode($response);
-        $response = ltrim($response, "?");
         $response = mb_convert_encoding($response, 'ISO-8859-1', 'UTF-8');
-
+        $response = ltrim($response, "?");
         $this->_response = $response;
 
         $this->_code = $code;

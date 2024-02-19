@@ -55,7 +55,7 @@ class WmsXtentService
      */
     function storagePath(string $path = ''): string
     {
-        $root = trim($this->getConfig('storage', __DIR__ . '/storage'), '\\/');
+        $root = rtrim($this->getConfig('storage', __DIR__ . '/storage'), '\\/');
         $path = trim($path ?? '', '\\/');
 
         $path = preg_replace('/\\\/', '/', $path);
