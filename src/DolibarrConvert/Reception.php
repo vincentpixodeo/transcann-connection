@@ -269,11 +269,12 @@ class Reception extends Model
                     });
 
                     if ($orderLine) {
-                        $line = ReceptionLine::load($order->id(), 'fk_commande', function (QueryBuilder $queryBuilder) use ($orderLine) {
+                        $line = ReceptionLine::load($order->id(), 'fk_commande', function (QueryBuilder $queryBuilder) use ($orderLine, $stock) {
                             $queryBuilder->where([
                                 ['fk_reception', $this->id()],
                                 ['fk_product', $orderLine->fk_product],
                                 ['fk_commandefourndet', $orderLine->id()],
+                                ['batch', $stock->BatchNumber],
                             ]);
                         });
 

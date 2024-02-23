@@ -10,13 +10,13 @@ use DateTime;
 use Exception;
 use Generator;
 use WMS\Xtent\Apis\IntegrationWebServices\Preparations as IntegrationWebServices_Preparations;
-use WMS\Xtent\Apis\QueryWebServices\GetReceptions;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\Data\Enums\OrderStatus;
 use WMS\Xtent\Data\Preparation;
 use WMS\Xtent\Database\Builder\QueryBuilder;
 use WMS\Xtent\Database\Builder\QueryJoinType;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingShipping;
+use WMS\Xtent\DolibarrConvert\Pivots\ModelPivot;
 
 /**
  * @property string ref
@@ -32,7 +32,7 @@ use WMS\Xtent\DolibarrConvert\Pivots\MappingShipping;
  * @property int fk_user_valid
  * @property DateTime date_delivery
  * @property DateTime date_expedition
- * @property int fk_status
+ * @property int fk_statut
  * @property int billed
  * @property float height
  * @property float width
@@ -117,27 +117,67 @@ class Shipping extends Model
         return Preparation::class;
     }
 
+    function createFromTranscan($item): static
+    {
+        $item instanceof Preparation || $item = new Preparation($item);
+        $mapping = MappingShipping::load($item->Id, ModelPivot::PROPERTY_TRANSCAN_ID);
+        if (!$mapping) {
+            $mapping = new MappingShipping();
+        }
+        $mapping->save([
+            ModelPivot::PROPERTY_TRANSCAN_ID => $item->Id,
+            ModelPivot::PROPERTY_TRANSCAN_META_ID => $item->Order,
+            ModelPivot::PROPERTY_TRANSCAN_PAYLOAD => json_encode($item->toArray()),
+            ModelPivot::PROPERTY_TRANSCAN_INTEGRATE_STATUS => ModelPivot::INTEGRATE_STATUS_OK,
+        ]);
+        if ($mapping->fk_object_id) {
+            $instance = static::load($mapping->fk_object_id);
+            $instance->setMappingInstance($mapping);
+            $instance->updateDataFromTranscann($item->toArray());
+            return $instance;
+        }
+        return $this;
+    }
+
     function updateDataFromTranscann(array $data = [])
     {
-        $mapping = MappingShipping::load($this->id(), 'fk_object_id', function (QueryBuilder $queryBuilder) {
-            $queryBuilder->where('transcan_integrate_status', Pivots\ModelPivot::INTEGRATE_STATUS_OK);
-        });
-        if ($mapping) {
-            $api = new GetReceptions();
-            if ($api->execute(['filters' => "Id={$mapping->transcan_id}"]) && $results = ($api->getResponse()->getData()['result'][0] ?? [])) {
-                /** @var Preparation $preparation */
-                $preparation = $this->getTranscanInstance();
-                $preparation->setData($results);
-                if ($preparation->OrderStatus == OrderStatus::Validated->value) {
-                    /*update status*/
-                    $this->fk_status = 1;
-                    $this->save();
+        $preparation = new Preparation($data);
+        $mapping = $this->getMappingInstance();
+
+        if ($this->id() && $mapping && $this->id() == $mapping->fk_object_id && $preparation->OrderStatus == OrderStatus::Validated->value) {
+            QueryBuilder::begin();
+
+            foreach ($preparation->StocksList as $stock) {
+                $stock->BatchNumber = uniqid();
+
+                $orderLine = ShippingItem::load($stock->ItemCode, 'llx_product.ref');
+
+                if ($orderLine) {
+                    $batch = ShippingBatch::load($orderLine->id(), 'fk_expeditiondet', function (QueryBuilder $queryBuilder) use ($stock) {
+                        $queryBuilder->where('batch', $stock->BatchNumber);
+                    });
+
+                    is_null($batch) && $batch = new ShippingBatch([
+                        'fk_expeditiondet' => $orderLine->id()
+                    ]);
+                    $batch->save([
+                        'qty' => $stock->SalesUnitAbs,
+                        'batch' => $stock->BatchNumber,
+                        'eatby' => $stock->ExpiryDate,
+                        'fk_origin_stock' => $orderLine->batch_fk_origin_stock,
+                    ]);
                 }
-                return $api->getClient()->getCurrentLog();
-            } else {
-                $errors = $api->getErrors();
-                throw new TranscannSyncException(array_pop($errors), $api->getClient()->getLogs());
             }
+
+            QueryBuilder::commit();
+            $mapping->save([
+                ModelPivot::PROPERTY_TRANSCAN_META_ID => $preparation->Order,
+                ModelPivot::PROPERTY_TRANSCAN_PAYLOAD => json_encode($preparation->toArray()),
+                ModelPivot::PROPERTY_TRANSCAN_INTEGRATE_STATUS => ModelPivot::INTEGRATE_STATUS_OK,
+            ]);
+
+            $this->save(['fk_statut' => 1]);
+            return true;
         }
     }
 
@@ -153,7 +193,7 @@ class Shipping extends Model
         $dataSend = $this->getDataSendToTranscan($lines);
 
         $api = new IntegrationWebServices_Preparations();
-      
+
         if ($api->execute($dataSend)) {
             $result = $api->getResponse()->getData();
             $transcannId = $result['result']['ResultOfPreparationsIntegration'][0]['XtentPreparationId'] ?? null;

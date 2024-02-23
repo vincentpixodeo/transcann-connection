@@ -31,6 +31,14 @@ class StaticModel extends AbstractObjectData implements ObjectDataInterface
         return $this->primaryKey;
     }
 
+    public function id($value = null): string|int|null
+    {
+        if (!is_null($value)) {
+            $this->{$this->getPrimaryKey()} = $value;
+        }
+        return $this->{$this->getPrimaryKey()};
+    }
+
     /**
      * @param array $condition
      * @param callable|null $queryBuilderCallback

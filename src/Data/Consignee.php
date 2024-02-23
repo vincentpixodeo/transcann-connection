@@ -7,8 +7,6 @@
 namespace WMS\Xtent\Data;
 
 use WMS\Xtent\Contracts\AbstractObjectData;
-use WMS\Xtent\Data\Address\City;
-use WMS\Xtent\Data\Address\Country;
 
 
 /**
@@ -27,8 +25,8 @@ use WMS\Xtent\Data\Address\Country;
  * @property string OperationAddress4
  * @property string OperationCityName
  * @property string OperationZipCode
- * @property City OperationCity
- * @property Country OperationCountry
+ * @property Address\City OperationCity
+ * @property Address\Country OperationCountry
  */
 class Consignee extends AbstractObjectData
 {

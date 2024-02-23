@@ -123,6 +123,7 @@ use WMS\Xtent\Contracts\AbstractObjectData;
  * @property string HelpQuay
  * @property int OrderStatusWithJS
  * @property Preparation\PreparationDetail[] PreparationDetailsList
+ * @property StockItem[] StocksList
  */
 class Preparation extends AbstractObjectData
 {

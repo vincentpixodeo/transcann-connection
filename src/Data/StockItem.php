@@ -56,6 +56,16 @@ use WMS\Xtent\Contracts\ObjectDataInterface;
  * @property int SalesUnit
  * @property string StatusId
  * @property Reception\TargetItem TargetItem
+ *
+ * ========Preparation Item ========
+ *
+ * @property float Value
+ * @property string DetailPrepComments
+ * @property int FullPalletsAbs
+ * @property int PreparationLineId
+ * @property float NetWeightAbs
+ * @property float ParcelsAbs
+ * @property int SalesUnitAbs
  */
 class StockItem extends AbstractObjectData implements ObjectDataInterface
 {
