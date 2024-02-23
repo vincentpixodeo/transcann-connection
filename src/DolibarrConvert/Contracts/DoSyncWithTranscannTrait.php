@@ -31,14 +31,12 @@ trait DoSyncWithTranscannTrait
                 'fk_object_id' => $this->{$primaryKey}
             ], $transcanInstance);
 
-            if ($this->{$primaryKey} && $exist = $this->_mappingInstance->fetch($this->{$primaryKey}, 'fk_object_id')) {
-
+            if ($this->{$primaryKey} && $exist = $this->_mappingInstance::load($this->{$primaryKey}, 'fk_object_id')) {
                 $this->_mappingInstance = $exist;
             }
-
             $this->_mappingInstance->addData($data);
 
-            if ($this->{$primaryKey} && !$this->_mappingInstance->getData($this->_mappingInstance->getPrimaryKey())) {
+            if ($this->{$primaryKey} && !$this->_mappingInstance->id()) {
                 $this->_mappingInstance->save();
             }
 

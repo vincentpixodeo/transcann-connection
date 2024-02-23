@@ -1,5 +1,6 @@
 <?php
 
+use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\DolibarrConvert\Action;
 use WMS\Xtent\DolibarrConvert\ActionResult;
 use WMS\Xtent\DolibarrConvert\TranscannSyncException;
@@ -66,7 +67,10 @@ function executeAction(Action $action, $allowRetry = true): void
     ]);
 
     $data = json_decode($action->payload, true);
-    $result = new ActionResult(['action_id' => $action->id()]);
+    $result = new ActionResult([
+        'action_id' => $action->id(),
+        'payload' => $action->payload
+    ]);
     try {
         if (!class_exists($instance)) {
             throw new Exception('Class not exist :' . $instance);
@@ -80,6 +84,7 @@ function executeAction(Action $action, $allowRetry = true): void
                 'response' => $return->getResponse()
             ]);
         } else {
+            $return instanceof ObjectDataInterface && $return = $return->toArray();
             $result->save([
                 'status' => ActionResult::STATUS_SUCCESS,
                 'response' => json_encode($return ?? 'null')

@@ -16,9 +16,9 @@ interface ConvertTranscanInteface
      * @param ObjectDataInterface $item
      * @return static
      */
-    public function createFromTranscan(ObjectDataInterface $item);
+    public function createFromTranscan($item);
 
-    public function convertToTranscan(): ObjectDataInterface;
+    public function convertToTranscan();
 
     function getMapAttributes(): array;
 

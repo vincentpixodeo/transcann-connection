@@ -7,9 +7,11 @@
 namespace WMS\Xtent\Data;
 
 
+use ArrayIterator;
+use Traversable;
 use WMS\Xtent\Contracts\ObjectDataInterface;
 
-class Collection implements ObjectDataInterface, \ArrayAccess
+class Collection implements ObjectDataInterface, \ArrayAccess, \IteratorAggregate
 {
     protected array $_items = [];
 
@@ -68,5 +70,10 @@ class Collection implements ObjectDataInterface, \ArrayAccess
     public function offsetUnset(mixed $offset): void
     {
         unset($this->_items[$offset]);
+    }
+
+    public function getIterator(): Traversable
+    {
+        return new ArrayIterator($this->_items);
     }
 }

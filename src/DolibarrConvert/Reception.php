@@ -17,6 +17,7 @@ use WMS\Xtent\Database\Builder\QueryBuilder;
 use WMS\Xtent\Database\Builder\QueryJoinType;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingReception;
 use WMS\Xtent\DolibarrConvert\Pivots\MappingWarehouse;
+use WMS\Xtent\DolibarrConvert\Pivots\ModelPivot;
 
 /**
  * @property int $rowid
@@ -182,6 +183,64 @@ class Reception extends Model
         });
     }
 
+    function createFromTranscan($item): static
+    {
+        $instance = new static();
+        $item instanceof \WMS\Xtent\Data\Reception || $item = new \WMS\Xtent\Data\Reception((array)$item);
+
+        if ($item->StatusReception == ReceptionStatus::Validated->value) {
+            $mapping = MappingReception::load($item->Id, 'transcan_id');
+
+            if ($mapping && $mapping->fk_object_id) {
+                $instance = static::load($mapping->fk_object_id);
+            } else {
+                $order = PurchaseOrder::load($item->Order, 'ref');
+                $instance->order = $order;
+                QueryBuilder::begin();
+                $instance->setData([
+                    'ref' => "(PROV-{$order->id()})",
+                    'entity' => 1,
+                    'fk_soc' => $order->fk_soc,
+                    'fk_projet' => $order->fk_projet,
+                    'ref_ext' => $order->ref_ext,
+                    'ref_supplier' => $order->ref_supplier,
+                    'fk_user_author' => $order->fk_user_author,
+                    'fk_statut' => 0,
+                    'billed' => 0,
+                ]);
+                $instance->save();
+
+                $instance->save([
+                    'ref' => "(RCP-{$instance->id()})",
+                    'fk_statut' => 1
+                ]);
+
+                $element = new ElementElement([
+                    'fk_source' => $order->id(),
+                    'sourcetype' => 'order_supplier',
+                    'fk_target' => $instance->id(),
+                    'targettype' => "reception",
+                ]);
+
+                $element->save();
+
+                QueryBuilder::commit();
+                $instance->getMappingInstance([
+                    ModelPivot::PROPERTY_TRANSCAN_ID => $item->Id,
+                    ModelPivot::PROPERTY_TRANSCAN_META_ID => $item->Order,
+                    ModelPivot::PROPERTY_TRANSCAN_PAYLOAD => json_encode($item->toArray()),
+                    ModelPivot::PROPERTY_TRANSCAN_INTEGRATE_STATUS => ModelPivot::INTEGRATE_STATUS_OK,
+                ])->save();
+            }
+            $instance->updateDataFromTranscann($item->toArray());
+            return $instance;
+        } else {
+            throw new Exception('status-->' . $item->StatusReception);
+        }
+
+    }
+
+
     /**
      * @param array $data Data of Reception Transcan
      * @return bool
@@ -193,38 +252,66 @@ class Reception extends Model
         $transcanReception = new \WMS\Xtent\Data\Reception($data);
 
         $mapping = MappingReception::load($transcanReception->Id, 'transcan_id');
-        if ($mapping) {
+
+        if ($mapping && $this->id() == $mapping->fk_object_id && $order = $this->order()) {
 
             $this->setMappingInstance($mapping);
-            $this->id($mapping->fk_object_id);
-            $mappingWarehouse = MappingWarehouse::load($transcanReception->Warehouse, 'transcan_id');
-            if ($transcanReception->StatusReception == ReceptionStatus::Validated->value) {
-                $this->fk_statut = 1;
-                $dataUpdate = [];
-                foreach ($transcanReception->ReceptionDetailsList as $receptionDetail) {
-                    $dataUpdate[$receptionDetail->ItemReceived->ItemCode] = [
-                        'batch' => $receptionDetail->BatchNumber,
-                        'qty' => $receptionDetail->ReceivedSaleUnit,
-                        'comment' => $receptionDetail->Comments,
-                        'fk_entrepot' => $mappingWarehouse?->fk_object_id
-                    ];
-                }
-                QueryBuilder::begin();
-                try {
-                    /** @var ReceptionLine $line */
-                    foreach ($this->lines() as $line) {
-                        if ($dataSave = ($dataUpdate[$line->fk_product_ref] ?? null)) {
-                            $line->save($dataSave);
-                        }
-                    }
-                    $this->save();
-                    QueryBuilder::commit();
-                    return true;
-                } catch (Exception $exception) {
-                    QueryBuilder::rollback();
-                    throw $exception;
-                }
 
+            $mappingWarehouse = MappingWarehouse::load($transcanReception->Warehouse, 'transcan_id');
+
+            if ($transcanReception->StatusReception == ReceptionStatus::Validated->value) {
+                QueryBuilder::begin();
+                foreach ($transcanReception->StocksList as $stock) {
+
+                    $orderLine = PurchaseOrderLine::load($stock->ItemCode, 'llx_product.ref', function (QueryBuilder $queryBuilder) {
+                        $queryBuilder->join('llx_product', 'fk_product', 'rowid')
+                            ->select(['llx_commande_fournisseurdet.*']);
+                    });
+
+                    if ($orderLine) {
+                        $line = ReceptionLine::load($order->id(), 'fk_commande', function (QueryBuilder $queryBuilder) use ($orderLine) {
+                            $queryBuilder->where([
+                                ['fk_reception', $this->id()],
+                                ['fk_product', $orderLine->fk_product],
+                                ['fk_commandefourndet', $orderLine->id()],
+                            ]);
+                        });
+
+                        $dataUpdate = [
+                            'fk_commande' => $order->id(),
+                            'fk_product' => $orderLine->fk_product,
+                            'fk_commandefourndet' => $orderLine->id(),
+                            'fk_projet' => $order->fk_projet,
+                            'fk_reception' => $this->id(),
+                            'qty' => $stock->SalesUnit,
+                            'cost_price' => $orderLine->subprice,
+                            'status' => 1,
+                            'comment' => 'TRANSCAN StocksList ID ' . $stock->Id,
+                            'batch' => $stock->BatchNumber,
+                            'eatby' => $stock->ExpiryDate,
+                            'fk_entrepot' => $mappingWarehouse?->fk_object_id,
+                        ];
+                        if (!$line) {
+                            $line = new ReceptionLine($dataUpdate);
+                        } else {
+                            $line->addData($dataUpdate);
+                        }
+
+                        $line->save();
+                    }
+                }
+                $this->save([
+                    'fk_statut' => 1
+                ]);
+                QueryBuilder::commit();
+                $mapping->save([
+                    ModelPivot::PROPERTY_TRANSCAN_META_ID => $transcanReception->Order,
+                    ModelPivot::PROPERTY_TRANSCAN_PAYLOAD => json_encode($transcanReception->toArray()),
+                    ModelPivot::PROPERTY_TRANSCAN_INTEGRATE_STATUS => ModelPivot::INTEGRATE_STATUS_OK,
+                ]);
+                return true;
+            } else {
+                throw new Exception('status-->' . $transcanReception->StatusReception);
             }
         }
         return false;

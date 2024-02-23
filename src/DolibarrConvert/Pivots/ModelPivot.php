@@ -26,6 +26,12 @@ abstract class ModelPivot extends AbstractObjectData implements ObjectDataInterf
     const INTEGRATE_STATUS_FAIL = 2;
     const INTEGRATE_STATUS_COMPLETED = 3;
 
+    const PROPERTY_FK_OBJECT_ID = 'fk_object_id';
+    const PROPERTY_TRANSCAN_ID = 'transcan_id';
+    const PROPERTY_TRANSCAN_META_ID = 'transcan_meta_id';
+    const PROPERTY_TRANSCAN_PAYLOAD = 'transcan_payload';
+    const PROPERTY_TRANSCAN_INTEGRATE_STATUS = 'transcan_integrate_status';
+
     protected ?string $_payloadClass = null;
     protected ?ObjectDataInterface $_payloadInstance = null;
 //    use CanSaveDataByLogTrait;
@@ -35,13 +41,16 @@ abstract class ModelPivot extends AbstractObjectData implements ObjectDataInterf
     {
         parent::__construct($data);
 
-        $this->_payloadClass = $transcanClass;
+        is_null($transcanClass) || $this->_payloadClass = $transcanClass;
     }
 
     function getPayload(): ?ObjectDataInterface
     {
         if ($this->transcan_payload && is_null($this->_payloadInstance)) {
-            $this->_payloadInstance = new $this->_payloadClass(json_decode($this->transcan_payload, true));
+
+            $this->_payloadInstance = $this->_payloadClass ? new $this->_payloadClass() : new class extends AbstractObjectData {
+            };
+            $this->_payloadInstance->addData(json_decode($this->transcan_payload, true));
         }
         return $this->_payloadInstance;
     }

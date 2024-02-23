@@ -6,8 +6,12 @@
 
 namespace WMS\Xtent\DolibarrConvert\Pivots;
 
+use WMS\Xtent\Data\Reception;
+
 class MappingReception extends ModelPivot
 {
+    protected ?string $_payloadClass = Reception::class;
+
     public function getMainTable(): string
     {
         return 'transcannconnection_mapping_receptions';

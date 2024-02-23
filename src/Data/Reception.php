@@ -92,6 +92,7 @@ use WMS\Xtent\Contracts\AbstractObjectData;
  * @property int StatusReceptionWithJS
  * @property Movement StorageMovement
  * @property \WMS\Xtent\Data\Reception\ReceptionDetail[] ReceptionDetailsList
+ * @property StockItem[] StocksList
  */
 class Reception extends AbstractObjectData
 {

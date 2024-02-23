@@ -26,7 +26,7 @@ trait ConvertTranscanTrait
         throw new Exception('the instance not is a instance of ' . $transcanInstance);
     }
 
-    public function createFromTranscan(ObjectDataInterface $item): static
+    public function createFromTranscan($item): static
     {
         $instance = new static();
 
