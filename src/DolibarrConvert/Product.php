@@ -111,6 +111,11 @@ class Product extends Model
         return (new ProductExtraField())->fetch($this->{$this->getPrimaryKey()});
     }
 
+    function updateStockFromTranscan(array $data)
+    {
+
+    }
+
     function updateDataFromTranscann(array $data = []): bool
     {
         return true;

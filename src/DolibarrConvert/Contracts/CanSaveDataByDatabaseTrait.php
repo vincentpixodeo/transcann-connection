@@ -205,10 +205,11 @@ trait CanSaveDataByDatabaseTrait
 
         $values = [];
         foreach ($this->toArray() as $column => $value) {
-            if (in_array($column, array_keys(AbstractObjectData::$casts[static::class] ?? [])) && $value != ($this->_original[$column] ?? null)) {
+            if (in_array($column, array_keys(AbstractObjectData::$casts[static::class] ?? [])) && $value !== ($this->_original[$column] ?? null)) {
                 $values[$column] = $value;
             }
         }
+
         $hasUpdateDatabase = true;
         $result = 0;
 

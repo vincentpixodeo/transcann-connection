@@ -323,7 +323,7 @@ class QueryBuilder
             if (is_numeric($value)) {
                 $values[] = "'$value'";
             } else {
-                $values[] = "'" . mysqli_real_escape_string(getDbInstance()->db, $value) . "'";
+                $values[] = is_null($value) ? 'NULL' : "'" . mysqli_real_escape_string(getDbInstance()->db, $value) . "'";
             }
 
         }

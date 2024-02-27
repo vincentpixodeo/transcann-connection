@@ -15,6 +15,7 @@ use WMS\Xtent\Database\Builder\QueryBuilder;
 class StaticModel extends AbstractObjectData implements ObjectDataInterface
 {
     protected ?string $lastSql = null;
+    protected array $_original = [];
 
     public function __construct(protected string $table, protected string $primaryKey = 'rowid')
     {
@@ -61,6 +62,7 @@ class StaticModel extends AbstractObjectData implements ObjectDataInterface
         }
         while ($row = $db->fetch_object($results)) {
             $instance = clone $this;
+            $instance->_original = (array)$row;
             $instance->setData((array)$row);
             yield $instance;
         }
@@ -94,7 +96,7 @@ class StaticModel extends AbstractObjectData implements ObjectDataInterface
         }
 
         $this->lastSql = (string)$sqlBuilder;
-     
+
         $result = $db->getRow($this->lastSql);
 
         if ($db->lasterror()) {
@@ -102,6 +104,7 @@ class StaticModel extends AbstractObjectData implements ObjectDataInterface
         }
 
         if ($result) {
+            $this->_original = (array)$result;
             return $this->addData((array)$result);
         }
         $this->_data = [];
@@ -126,5 +129,46 @@ class StaticModel extends AbstractObjectData implements ObjectDataInterface
             }
         }
         return $sqlBuilder;
+    }
+
+    function save(array $data = [])
+    {
+        $this->addData($data);
+
+        $primaryKey = $this->getPrimaryKey();
+        $db = getDbInstance();
+
+        $values = [];
+        foreach ($this->toArray() as $column => $value) {
+            $values[$column] = $value;
+        }
+        $hasUpdateDatabase = true;
+        $result = 0;
+        if (($id = $this->id()) && $values) {
+            $sqlBuilder = $this->buildSelectSql();
+            $sqlBuilder->where($this->getPrimaryKey(), $id);
+            $this->lastSql = $sqlBuilder->toUpdateSql($values);
+            $result = $db->query($this->lastSql);
+            $values = array_merge($this->_original, $values);
+        } elseif ($values) {
+            $sqlBuilder = $this->buildSelectSql();
+            $this->lastSql = $sqlBuilder->toInsertSql($values);
+            $result = $db->query($this->lastSql);
+
+            $id = $db->last_insert_id($sqlBuilder->getTable());
+            $values[$primaryKey] = $id;
+            $this->addData([$primaryKey => $id]);
+        } else {
+            $hasUpdateDatabase = false;
+        }
+
+        if ($hasUpdateDatabase && $db->lasterror()) {
+            throw new Exception($this->lastSql . PHP_EOL . $db->lasterror());
+        }
+        if ($hasUpdateDatabase) {
+            $this->_original = $values;
+        }
+
+        return $hasUpdateDatabase;
     }
 }

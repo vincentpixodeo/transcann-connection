@@ -3,6 +3,8 @@
 use WMS\Xtent\Contracts\ObjectDataInterface;
 use WMS\Xtent\DolibarrConvert\Action;
 use WMS\Xtent\DolibarrConvert\ActionResult;
+use WMS\Xtent\DolibarrConvert\Enums\ActionResultStatus;
+use WMS\Xtent\DolibarrConvert\Enums\ActionStatus;
 use WMS\Xtent\DolibarrConvert\TranscannSyncException;
 
 /**
@@ -59,11 +61,11 @@ function executeAction(Action $action, $allowRetry = true): void
 {
     $db = getDbInstance();
     list($instance, $method) = explode('@', $action->action);
-    $failStatus = $allowRetry ? Action::STATUS_INIT : Action::STATUS_PROCESSED;
+    $failStatus = $allowRetry ? ActionStatus::Init->value : ActionStatus::Processed->value;
     $action->save([
         'action' => $action->action,
         'retries' => $action->retries + 1,
-        'status' => Action::STATUS_PROCESSING
+        'status' => ActionStatus::Processing->value
     ]);
 
     $data = json_decode($action->payload, true);
@@ -75,24 +77,24 @@ function executeAction(Action $action, $allowRetry = true): void
         if (!class_exists($instance)) {
             throw new Exception('Class not exist :' . $instance);
         }
-        $result->save(['status' => ActionResult::STATUS_START]);
+        $result->save(['status' => ActionResultStatus::Start->value]);
         $return = (new $instance($data ?? []))->{$method}($data);
         if ($return instanceof \WMS\Xtent\Http\Log) {
             $result->save([
                 'payload' => json_encode($return->getBody()),
-                'status' => ActionResult::STATUS_SUCCESS,
+                'status' => ActionResultStatus::Success->value,
                 'response' => $return->getResponse()
             ]);
         } else {
             $return instanceof ObjectDataInterface && $return = $return->toArray();
             $result->save([
-                'status' => ActionResult::STATUS_SUCCESS,
+                'status' => ActionResultStatus::Success->value,
                 'response' => json_encode($return ?? 'null')
             ]);
         }
 
         $action->save([
-            'status' => Action::STATUS_PROCESSED,
+            'status' => ActionStatus::Processed->value,
             'last_result_id' => $result->id(),
             'last_result_status' => $result->status,
         ]);
@@ -111,7 +113,7 @@ function executeAction(Action $action, $allowRetry = true): void
             'payload' => serialize($payload),
             'response' => json_encode($response),
             'error' => $error,
-            'status' => ActionResult::STATUS_FAIL
+            'status' => ActionResultStatus::Fail->value
         ]);
         $action->save([
             'status' => $failStatus,
@@ -122,7 +124,7 @@ function executeAction(Action $action, $allowRetry = true): void
         $result->save([
             'response' => $exception->getTraceAsString(),
             'error' => $exception->getMessage(),
-            'status' => ActionResult::STATUS_FAIL
+            'status' => ActionResultStatus::Fail->value
         ]);
         $action->save([
             'status' => $failStatus,
